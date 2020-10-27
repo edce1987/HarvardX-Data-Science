@@ -1,4 +1,5 @@
-initials,state,age,time
-vib,MA,61,6:01
-adc,TX,45,5:45
-kme,CT,50,4:19
+age_group,2015_time,2015_participants,2016_time,2016_participants
+20,3:46,54,3:22,62
+30,3:50,60,3:43,58
+40,4:39,29,3:49,33
+50,4:48,10,4:59,14
