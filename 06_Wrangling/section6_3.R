@@ -1140,6 +1140,7 @@ q5 <- movielens %>% mutate(date=year(as_datetime(timestamp)), hour=hour(as_datet
 library(tidyverse)
 install.packages("gutenbergr")
 library(gutenbergr)
+install.packages("tidytext")
 library(tidytext)
 options(digits = 3)
 
@@ -1167,6 +1168,7 @@ words <- words %>% anti_join(stop_words) nrow(words)
 #12
 afinn <- get_sentiments("afinn")
 
+<<<<<<< HEAD
 ####Final Assessment
 library(tidyverse)
 library(pdftools)
@@ -1230,4 +1232,3 @@ view(s)
 test <- s[3:34]
 length(test)
 jojo <- str_remove(s, pattern="\\d+")
-jojo
