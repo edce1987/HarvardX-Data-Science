@@ -1167,3 +1167,67 @@ words <- words %>% anti_join(stop_words) nrow(words)
 #12
 afinn <- get_sentiments("afinn")
 
+####Final Assessment
+library(tidyverse)
+library(pdftools)
+options(digits = 3)    # report 3 significant digits
+
+fn <- system.file("extdata", "RD-Mortality-Report_2015-18-180531.pdf", package="dslabs")
+system("cmd.exe", input = paste("start", fn))
+
+#2
+
+txt <- pdf_text(fn)
+?pdf_text
+
+class(txt)
+length(txt)
+view(txt)
+
+#3
+txt9 <- txt[9]
+view(txt9)
+x <- str_split(txt9, pattern="\n")
+?str_split
+class(x)
+length(x)
+
+#4
+s <- x[[1]]
+class(s)
+length(s)
+s
+
+#5
+?str_trim
+s <- str_trim(s, side="both")
+s[1]
+
+#6
+header_index <- str_which(s, pattern="2015")
+header_index
+view(header_index)
+class(header_index)
+
+#7
+header <- str_split(header_index, pattern = " ", simplify = TRUE) 
+view(header)
+
+#8
+view(s)
+tail_index <- list(35)
+class(tail_index)
+tail_index
+
+#9
+n <- str_count(s, pattern="\\d+")
+n
+
+#10
+class(s)
+length(s)
+view(s)
+test <- s[3:34]
+length(test)
+jojo <- str_remove(s, pattern="\\d+")
+jojo
