@@ -149,3 +149,104 @@ library(Lahman)
 Teams %>% filter(yearID %in% 1961:2001) %>%
   summarize(correlation = cor(X2B/G, X3B/G)) %>% pull(correlation)
 
+####
+#Key points
+#Correlation is not always a good summary of the relationship between two variables.
+#The general idea of conditional expectation is that we stratify a population into groups and compute summaries in each group.
+#A practical way to improve the estimates of the conditional expectations is to define strata of with similar values of x.
+#If there is perfect correlation, the regression line predicts an increase that is the same number of SDs for both variables. If there is 0 correlation, then we don’t use x at all for the prediction and simply predict the average  μy . For values between 0 and 1, the prediction is somewhere in between. If the correlation is negative, we predict a reduction instead of an increase.
+library(tidyverse)
+library(Lahman)
+
+conditional_avg <- galton_heights %>%
+  filter(round(father) == 72) %>%
+  summarize(avg = mean(son)) %>% .$avg
+
+# stratify fathers' heights to make a boxplot of son heights
+galton_heights %>% mutate(father_strata = factor(round(father))) %>%
+  ggplot(aes(father_strata, son)) +
+  geom_boxplot() +
+  geom_point()
+
+# center of each boxplot
+galton_heights %>%
+  mutate(father = round(father)) %>%
+  group_by(father) %>%
+  summarize(son_conditional_avg = mean(son)) %>%
+  ggplot(aes(father, son_conditional_avg)) +
+  geom_point()
+
+# calculate values to plot regression line on original data
+mu_x <- mean(galton_heights$father)
+mu_y <- mean(galton_heights$son)
+s_x <- sd(galton_heights$father)
+s_y <- sd(galton_heights$son)
+r <- cor(galton_heights$father, galton_heights$son)
+m <- r * s_y/s_x #regression coefficient
+b <- mu_y - m*mu_x #regression intercept
+
+# add regression line to plot
+galton_heights %>%
+  ggplot(aes(father, son)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(intercept = b, slope = m)
+
+####
+
+#Key points
+#When a pair of random variables are approximated by the bivariate normal distribution, scatterplots look like ovals. They can be thin (high correlation) or circle-shaped (no correlation).
+#When two variables follow a bivariate normal distribution, computing the regression line is equivalent to computing conditional expectations.
+#We can obtain a much more stable estimate of the conditional expectation by finding the regression line and using it to make predictions.
+
+galton_heights %>%
+  mutate(z_father = round((father - mean(father))/sd(father))) %>%
+  filter(z_father %in% -2:2) %>%
+  ggplot() +
+  stat_qq(aes(sample=son)) +
+  facet_wrap(~z_father)
+
+####
+#Key points
+#Conditioning on a random variable X can help to reduce variance of response variable Y.
+#The standard deviation of the conditional distribution is  SD(Y∣X=x)=σ_y*sqrt(1−ρ2), which is smaller than the standard deviation without conditioning  σy .
+#Because variance is the standard deviation squared, the variance of the conditional distribution is  σ^2_y*(1−ρ^2) .
+#In the statement "X explains such and such percent of the variability," the percent value refers to the variance. The variance decreases by  ρ2  percent.
+#The “variance explained” statement only makes sense when the data is approximated by a bivariate normal distribution.
+
+#Key point
+#There are two different regression lines depending on whether we are taking the expectation of Y given X or taking the expectation of X given Y.
+
+# compute a regression line to predict the son's height from the father's height
+mu_x <- mean(galton_heights$father)
+mu_y <- mean(galton_heights$son)
+s_x <- sd(galton_heights$father)
+s_y <- sd(galton_heights$son)
+r <- cor(galton_heights$father, galton_heights$son)
+m_1 <-  r * s_y / s_x
+b_1 <- mu_y - m_1*mu_x
+
+# compute a regression line to predict the father's height from the son's height
+m_2 <-  r * s_x / s_y
+b_2 <- mu_x - m_2*mu_y
+
+####Assessment 4
+set.seed(1989, sample.kind="Rounding") #if you are using R 3.6 or later
+library(HistData)
+data("GaltonFamilies")
+
+female_heights <- GaltonFamilies%>%     
+  filter(gender == "female") %>%     
+  group_by(family) %>%     
+  sample_n(1) %>%     
+  ungroup() %>%     
+  select(mother, childHeight) %>%     
+  rename(daughter = childHeight)
+
+#Q8
+dat <- female_heights %>% summarize(m_m = mean(mother), s_m=sd(mother), m_d=mean(daughter), s_d=sd(daughter), r=cor(mother,daughter))
+
+#Q9
+dat2 <- dat %>% summarize(b=r*(s_d/s_m), a=m_d - m_m*b) 
+
+#Q11
+y= 42.5 + 60*0.339
