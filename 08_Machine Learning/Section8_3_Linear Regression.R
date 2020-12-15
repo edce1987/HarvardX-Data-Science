@@ -356,3 +356,6 @@ polls_2008 %>% mutate(smooth = fit$y) %>%
   ggplot(aes(day, margin)) +
   geom_point(size = 3, alpha = .5, color = "grey") + 
   geom_line(aes(day, smooth), color="red")
+
+####
+
