@@ -358,4 +358,259 @@ polls_2008 %>% mutate(smooth = fit$y) %>%
   geom_line(aes(day, smooth), color="red")
 
 ####
+#Key points
+#A limitation of the bin smoothing approach is that we need small windows for the approximately constant assumptions to hold which may lead to imprecise estimates of  f(x) . Local weighted regression (loess) permits us to consider larger window sizes.
+#One important difference between loess and bin smoother is that we assume the smooth function is locally linear in a window instead of constant.
+#The result of loess is a smoother fit than bin smoothing because we use larger sample sizes to estimate our local parameters.
+
+polls_2008 %>% ggplot(aes(day, margin)) +
+  geom_point() + 
+  geom_smooth(color="red", span = 0.15, method = "loess", method.args = list(degree=1))
+
+##Assessment Smoothing
+library(tidyverse)
+library(lubridate)
+library(purrr)
+library(pdftools)
+
+fn <- system.file("extdata", "RD-Mortality-Report_2015-18-180531.pdf", package="dslabs")
+dat <- map_df(str_split(pdf_text(fn), "\n"), function(s){
+  s <- str_trim(s)
+  header_index <- str_which(s, "2015")[1]
+  tmp <- str_split(s[header_index], "\\s+", simplify = TRUE)
+  month <- tmp[1]
+  header <- tmp[-1]
+  tail_index  <- str_which(s, "Total")
+  n <- str_count(s, "\\d+")
+  out <- c(1:header_index, which(n==1), which(n>=28), tail_index:length(s))
+  s[-out] %>%
+    str_remove_all("[^\\d\\s]") %>%
+    str_trim() %>%
+    str_split_fixed("\\s+", n = 6) %>%
+    .[,1:5] %>%
+    as_data_frame() %>% 
+    setNames(c("day", header)) %>%
+    mutate(month = month,
+           day = as.numeric(day)) %>%
+    gather(year, deaths, -c(day, month)) %>%
+    mutate(deaths = as.numeric(deaths))
+}) %>%
+  mutate(month = recode(month, "JAN" = 1, "FEB" = 2, "MAR" = 3, "APR" = 4, "MAY" = 5, "JUN" = 6, 
+                        "JUL" = 7, "AGO" = 8, "SEP" = 9, "OCT" = 10, "NOV" = 11, "DEC" = 12)) %>%
+  mutate(date = make_date(year, month, day)) %>%
+  dplyr::filter(date <= "2018-05-01")
+
+dat %>% ggplot(aes(date, deaths)) + 
+  geom_point() + 
+  geom_smooth(color="red", span = 0.05, method = "loess", method.args = list(degree=1))
+
+
+#Q1
+span <- 60 / as.numeric(diff(range(dat$date)))
+fit <- dat %>% mutate(x = as.numeric(date)) %>% loess(deaths ~ x, data = ., span = span, degree = 1)
+dat %>% mutate(smooth = predict(fit, as.numeric(date))) %>%
+  ggplot() +
+  geom_point(aes(date, deaths)) +
+  geom_line(aes(date, smooth), lwd = 2, col = "red")
+
+#Q2
+dat %>% 
+  mutate(smooth = predict(fit, as.numeric(date)), day = yday(date), year = as.character(year(date))) %>%
+  ggplot(aes(day, smooth, col = year)) +
+  geom_line(lwd = 2)
+
+#Q3
+library(broom)
+mnist_27$train %>% glm(y ~ x_2, family = "binomial", data = .) %>% tidy()
+
+qplot(x_2, y, data = mnist_27$train)
+
+A <- mnist_27$train
+
+A %>% mutate(y_t = ifelse(y==7, 1, 0)) %>% ggplot(aes(x_2, y)) + geom_point() + 
+  geom_smooth(color="red", span = 0.01, method = "loess", method.args = list(degree=1))
+
+##Matrices
+#Key points
+#The main reason for using matrices is that certain mathematical operations needed to develop efficient code can be performed using techniques from a branch of mathematics called linear algebra.
+#Linear algebra and matrix notation are key elements of the language used in academic papers describing machine learning techniques.
+
+library(tidyverse)
+library(dslabs)
+if(!exists("mnist")) mnist <- read_mnist()
+
+class(mnist$train$images)
+
+x <- mnist$train$images[1:1000,] 
+y <- mnist$train$labels[1:1000]
+
+####
+
+#Key points
+#In matrix algebra, we have three main types of objects: scalars, vectors, and matrices.
+#Scalar:   α=1 
+#Vector:   X1=⎛⎝⎜⎜x1,1⋮xN,1⎞⎠⎟⎟ 
+#Matrix:  X=[X1X2]=⎛⎝⎜⎜x1,1⋮xN,1x1,2⋮xN,2⎞⎠⎟⎟ 
+#In R, we can extract the dimension of a matrix with the function dim(). We can convert a vector into a matrix using the function as.matrix().
+
+length(x[,1])
+x_1 <- 1:5
+x_2 <- 6:10
+cbind(x_1, x_2)
+dim(x)
+dim(x_1)
+dim(as.matrix(x_1))
+dim(x)
+
+####
+#Key points
+#In R, we can convert a vector into a matrix with the matrix() function. The matrix is filled in by column, but we can fill by row by using the byrow argument. The function t() can be used to directly transpose a matrix. 
+#Note that the matrix function recycles values in the vector without warning if the product of columns and rows does not match the length of the vector.
+
+my_vector <- 1:15
+
+# fill the matrix by column
+mat <- matrix(my_vector, 5, 3)
+mat
+
+# fill by row
+mat_t <- matrix(my_vector, 3, 5, byrow = TRUE)
+mat_t
+identical(t(mat), mat_t)
+matrix(my_vector, 5, 5)
+grid <- matrix(x[3,], 28, 28)
+image(1:28, 1:28, grid)
+
+# flip the image back
+image(1:28, 1:28, grid[, 28:1])
+
+
+####
+#Key points
+#The function rowSums() computes the sum of each row.
+#The function rowMeans() computes the average of each row.
+#We can compute the column sums and averages using the functions colSums() and colMeans().
+#The matrixStats package adds functions that performs operations on each row or column very efficiently, including the functions rowSds() and colSds().
+#The apply() function lets you apply any function to a matrix. The first argument is the matrix, the second is the dimension (1 for rows, 2 for columns), and the third is the function. 
+
+sums <- rowSums(x)
+avg <- rowMeans(x)
+
+data_frame(labels = as.factor(y), row_averages = avg) %>%
+  qplot(labels, row_averages, data = ., geom = "boxplot")
+
+avgs <- apply(x, 1, mean)
+sds <- apply(x, 2, sd)
+
+install.packages("matrixStats")
+
+##
+#Key points
+#The operations used to extract columns: x[,c(351,352)].
+#The operations used to extract rows: x[c(2,3),].
+#We can also use logical indexes to determine which columns or rows to keep:  new_x <- x[ ,colSds(x) > 60].
+#Important note: if you select only one column or only one row, the result is no longer a matrix but a vector. We can preserve the matrix class by using the argument drop=FALSE. 
+
+library(matrixStats)
+library(tidyverse)
+
+sds <- colSds(x)
+qplot(sds, bins = "30", color = I("black"))
+image(1:28, 1:28, matrix(sds, 28, 28)[, 28:1])
+
+#extract columns and rows
+x[ ,c(351,352)]
+x[c(2,3),]
+new_x <- x[ ,colSds(x) > 60]
+dim(new_x)
+class(x[,1])
+dim(x[1,])
+
+#preserve the matrix class
+class(x[ , 1, drop=FALSE])
+dim(x[, 1, drop=FALSE])
+
+####
+
+mat <- matrix(1:15, 5, 3)
+mat[mat > 6 & mat < 12] <- 0
+
+bin_x <- x
+bin_x[bin_x < 255/2] <- 0 
+bin_x[bin_x > 255/2] <- 1
+
+#index with matrices
+mat <- matrix(1:15, 5, 3)
+as.vector(mat)
+qplot(as.vector(x), bins = 30, color = I("black"))
+new_x <- x
+new_x[new_x < 50] <- 0
+
+mat <- matrix(1:15, 5, 3)
+mat[mat < 3] <- 0
+mat
+
+mat <- matrix(1:15, 5, 3)
+mat[mat > 6 & mat < 12] <- 0
+mat
+
+#binarize the data
+bin_x <- x
+bin_x[bin_x < 255/2] <- 0
+bin_x[bin_x > 255/2] <- 1
+bin_X <- (x > 255/2)*1
+
+####
+#Key points
+#We can scale each row of a matrix using this line of code:
+(x - rowMeans(x)) / rowSds(x)
+#To scale each column of a matrix, we use this code:
+t(t(x) - colMeans(x))
+#We can also use a function called sweep() that works similarly to apply(). It takes each entry of a vector and subtracts it from the corresponding row or column:
+X_mean_0 <- sweep(x, 2, colMeans(x))
+#Matrix multiplication: t(x) %*% x
+#The cross product: crossprod(x)
+#The inverse of a function: solve(crossprod(x))
+#The QR decomposition: qr(x)
+  
+#scale each row of a matrix
+(x - rowMeans(x)) / rowSds(x)
+  
+#scale each column
+t(t(x) - colMeans(x))
+  
+#take each entry of a vector and subtracts it from the corresponding row or column
+x_mean_0 <- sweep(x, 2, colMeans(x))
+  
+#divide by the standard deviation
+x_mean_0 <- sweep(x, 2, colMeans(x))
+x_standardized <- sweep(x_mean_0, 2, colSds(x), FUN = "/")
+
+####Assessment Matrices
+
+#Q1
+x <- matrix(rnorm(100*10), 100, 10)
+dim(x)
+
+#Q2
+nrow(x)
+ncol(x)
+
+#Q3
+x <- x + seq(nrow(x))
+x <- sweep(x, 1, 1:nrow(x),"+")
+
+#)Q4
+x <- sweep(x, 2, 1:ncol(x), FUN = "+")
+
+#Q5
+rowMeans(x)
+
+#Q6
+mnist <- read_mnist()
+y <- rowMeans(mnist$train$images>50 & mnist$train$images<205)
+qplot(as.factor(mnist$train$labels), y, geom = "boxplot")
+mean(y) # proportion of pixels
+
+####
 
