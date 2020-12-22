@@ -45,7 +45,7 @@ tmp %>% filter(center %in% c(-125, -55)) %>%
                  method = "lm", formula=y~1, se = FALSE) +
      facet_wrap(~center)
 
-# May have to download old version of gganimate 
+# May have to download old version of gganimate
 # Install using code below, then restart R session:
 # library(devtools)
 # install_github("thomasp85/gganimate", ref = "v0.1.1")
