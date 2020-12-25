@@ -183,24 +183,221 @@ max(F_1)
 ks[which.max(F_1)]
 
 #Q2
+
+library(dslabs)
+library(tidyverse)
+library(caret)
+data("tissue_gene_expression")
+
+y <- tissue_gene_expression$y
+x <- tissue_gene_expression$x
+
+set.seed(1, sample.kind = "Rounding")
+
+test_index <- createDataPartition(tissue_gene_expression$y, times = 1, p = 0.5, list = FALSE)
+test_set_x <- x[test_index,]
+train_set_x <- x[-test_index,]
+test_set_y <- y[test_index]
+train_set_y <- y[-test_index]
+
+ks <- seq(1, 11, 2)
+
+accuracy <- sapply(ks, function(k){
+  fit <- knn3(train_set_x, train_set_y, k = k)
+  y_hat <- predict(fit, test_set_x, type = "class")
+  match <- confusionMatrix(data = y_hat, reference = test_set_y)$overall["Accuracy"]
+  list(k=k, match=match)
+})
+accuracy
+
+####Cross-validation
+#Key points
+#For  k -fold cross validation, we divide the dataset into a training set and a test set. We train our algorithm exclusively on the training set and use the test set only for evaluation purposes. 
+#For each set of algorithm parameters being considered, we want an estimate of the MSE and then we will choose the parameters with the smallest MSE. In  k -fold cross validation, we randomly split the observations into  k  non-overlapping sets, and repeat the calculation for MSE for each of these sets. Then, we compute the average MSE and obtain an estimate of our loss. Finally, we can select the optimal parameter that minimized the MSE.
+#In terms of how to select  k  for cross validation, larger values of  k  are preferable but they will also take much more computational time. For this reason, the choices of  k=5  and  k=10  are common.
+
+##Assessment
+library(tidyverse)
+library(caret)
+
+# set.seed(1996) #if you are using R 3.5 or earlier
+set.seed(1996, sample.kind="Rounding") #if you are using R 3.6 or later
+n <- 1000
+p <- 10000
+x <- matrix(rnorm(n*p), n, p)
+colnames(x) <- paste("x", 1:ncol(x), sep = "_")
+y <- rbinom(n, 1, 0.5) %>% factor()
+
+x_subset <- x[ ,sample(p, 100)]
+
+#Q1
+?train
+fit <- train(x_subset, y, method = "glm")
+fit$results
+
+#Q2
+install.packages("BiocManager")
+BiocManager::install("genefilter")
+library(genefilter)
+tt <- colttests(x, y)
+
+pvals <- tt$p.value
+
+#Q3
+ind <- tt$p.value<=0.01
+mean(ind) * 10000
+
+#or
+ind <- which(pvals <= 0.01)
+length(ind)
+
+#Q4
+x_subset <- x[ ,ind]
+fit <- train(x_subset, y, method = "glm")
+fit$results
+
+#Q5
+fit <- train(x_subset, y, method = "knn", tuneGrid = data.frame(k = seq(101, 301, 25)))
+ggplot(fit)
+
+#Q6
+#Because we used the entire dataset to select the columns in the model, the accuracy is too high. The selection step needs to be included as part of the cross-validation algorithm, and then the cross-validation itself is performed after the column selection step.
+#As a follow-up exercise, try to re-do the cross-validation, this time including the selection step in the cross-validation algorithm. The accuracy should now be close to 50%.
+
+#Q7
 library(dslabs)
 data("tissue_gene_expression")
-set.seed(1, sample.kind = "Rounding")
-str(tissue_gene_expression)
-test_index <- createDataPartition(tissue_gene_expression$y, times = 1, p= 0.5, list= FALSE)
+fit <- train(tissue_gene_expression$x, tissue_gene_expression$y, method = "knn", tuneGrid = data.frame(k = seq(1, 7, 2)))
+ggplot(fit)
+fit$results
 
-y_train <- tissue_gene_expression$y[-test_index]
-x_train <- tissue_gene_expression$x[-test_index,]
-y_test <- tissue_gene_expression$y[test_index]
-x_test <- tissue_gene_expression$x[test_index,]
+####
+#Key points
+#When we don't have access to the entire population, we can use bootstrap to estimate the population median  m  .
+#The bootstrap permits us to approximate a Monte Carlo simulation without access to the entire distribution. The general idea is relatively simple. We act as if the observed sample is the population. We then sample datasets (with replacement) of the same sample size as the original dataset. Then we compute the summary statistic, in this case the median, on this bootstrap sample.
+#Note that we can use ideas similar to those used in the bootstrap in cross validation: instead of dividing the data into equal partitions, we simply bootstrap many times.
+#Code
+n <- 10^6
+income <- 10^(rnorm(n, log10(45000), log10(3)))
+qplot(log10(income), bins = 30, color = I("black"))
 
-train_set <- list(x=x_train, y=y_train)
-test_set <- list(x=x_test, y=y_test)
-ks <- seq(1,11,2)
-accuracy <- sapply(ks, function(k){
-  fit <- knn3(x_train, y_train, k=k)
-  y_hat <- predict(fit, test_set, type = "class")
-  cm <- confusionMatrix(data = y_hat, reference = test_set$y)
-  cm_error <- cm$overall["Accuracy"]
-  
+m <- median(income)
+m
+
+set.seed(1, sample.kind="Rounding")
+N <- 250
+X <- sample(income, N)
+M<- median(X)
+M
+
+library(gridExtra)
+B <- 10^5
+Ms <- replicate(B, {
+    X <- sample(income, N)
+    median(X)
 })
+p1 <- qplot(M, bins = 30, color = I("black"))
+p2 <- qplot(sample = scale(M)) + geom_abline()
+grid.arrange(p1, p2, ncol = 2)
+
+mean(M)
+sd(M)
+
+B <- 10^5
+M_star <- replicate(B, {
+    X_star <- sample(X, N, replace = TRUE)
+    median(X_star)
+})
+
+library(tidyverse)
+tibble(monte_carlo = sort(M), bootstrap = sort(M_star)) %>%
+    qplot(monte_carlo, bootstrap, data = .) + 
+    geom_abline()
+
+quantile(M, c(0.05, 0.95))
+quantile(M_star, c(0.05, 0.95))
+
+median(X) + 1.96 * sd(X) / sqrt(N) * c(-1, 1)
+
+mean(M) + 1.96 * sd(M) * c(-1,1)
+
+mean(M_star) + 1.96 * sd(M_star) * c(-1, 1)
+
+#Assessment
+library(dslabs)
+library(caret)
+data(mnist_27)
+# set.seed(1995) # if R 3.5 or earlier
+set.seed(1995, sample.kind="Rounding") # if R 3.6 or later
+indexes <- createResample(mnist_27$train$y, 10)
+
+#Q1
+data.frame(sum(indexes[[1]]==1), sum(indexes[[1]]==4), sum(indexes[[1]]==7))
+
+#Q2
+df <- as.data.frame(indexes)
+sum(df==3)
+
+#or
+x=sapply(indexes, function(ind){
+  sum(ind == 3)
+})
+sum(x)
+
+#Q3
+qnorm(0.75)
+quantile(y, 0.75)
+
+set.seed(1, sample.kind="Rounding")
+B <- 10000
+MC <- replicate(B, {
+  y <- rnorm(100, 0, 1)
+  qf <- quantile(y, 0.75)
+})
+
+mean(MC)
+sd(MC)
+
+#Q4
+library(tidyverse)
+library(caret)
+set.seed(1, sample.kind = "Rounding")
+y <- rnorm(100, 0, 1)
+set.seed(1, sample.kind = "Rounding")
+indexes <- createResample(y, 10)
+i <- 1:10
+res <- sapply(i, function(i) {
+  ind <- y[indexes[[i]]]
+  quantile(ind, 0.75)
+})
+mean(res)
+sd(res)
+
+#or
+
+set.seed(1, sample.kind = "Rounding")
+y <- rnorm(100, 0, 1)
+
+set.seed(1, sample.kind="Rounding")
+indexes <- createResample(y, 10)
+q_75_star <- sapply(indexes, function(ind){
+  y_star <- y[ind]
+  quantile(y_star, 0.75)
+})
+mean(q_75_star)
+sd(q_75_star)
+
+#Q5
+library(tidyverse)
+library(caret)
+set.seed(1, sample.kind = "Rounding")
+y <- rnorm(100, 0, 1)
+set.seed(1, sample.kind = "Rounding")
+indexes <- createResample(y, 10000)
+
+res <- sapply(indexes, function(ind) {
+  x <- y[ind]
+  quantile(x, 0.75)
+})
+mean(res)
+sd(res)
