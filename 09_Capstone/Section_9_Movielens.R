@@ -89,3 +89,67 @@ edx %>%
   geom_line()
 
 ####
+
+#Prepare sample of train and test set
+
+trainShort <- sample_n(trainSet, 1000)
+testShort <- sample_n(testSet, 1000)
+
+testShort <- testShort %>% 
+  semi_join(trainShort, by = "movieId") %>%
+  semi_join(trainShort, by = "userId")
+#KNN
+modelLookup("knn")
+fitKnn <- train(rating ~ ., method = "knn", data = trainShort, tuneGrid = data.frame(k=seq(1,10,1)))
+fitKnn
+ggplot(fitKnn)
+
+predKnn <- predict(fitKnn, testShort)
+predKnn
+
+rmseKnn <- RMSE(testShort$rating, predKnn)
+rmseKnn
+
+#Logistic
+modelLookup("glm")
+fitGlm <- train(rating ~ ., method = "glm", data = trainShort)
+fitGlm
+
+
+predGlm <- predict(fitGlm, testShort)
+predGlm
+
+rmseGlm <- RMSE(testShort$rating, predGlm)
+rmseGlm
+
+#Random Forest
+modelLookup("rf")
+fitRf <- train(rating ~ ., method = "rf", data = trainShort, tuneGrid = data.frame(mtry=seq(1,10,1)))
+fitRf
+ggplot(fitRf)
+
+predRf <- predict(fitRf, testShort)
+
+rmseRf <- RMSE(testShort$rating, predRf)
+rmseRf
+
+
+#LM
+modelLookup()
+fitLm <- train(rating ~ ., method = "lm", data = trainShort)
+fitLm
+
+predLm <- predict(fitLm, testShort)
+
+rmseLm <- RMSE(testShort$rating, predLm)
+rmseLm
+
+#Loess
+modelLookup()
+fitGamLoess <- train(rating ~ ., method = "gamLoess", data = trainShort)
+fitGamLoess
+
+predGamLoess <- predict(fitGamLoess, testShort)
+
+rmseGamLoess <- RMSE(testShort$rating, predGamLoess)
+rmseGamLoess
