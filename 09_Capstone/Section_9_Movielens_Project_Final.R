@@ -63,7 +63,7 @@ library(tidyverse)
 library(caret)
 library(lubridate)
 
-#Data Wrangling
+##Data Wrangling
 #Assumption: The timestamp which indicates when a certain movie was rated by a certain user has an effect on the movie rating.
 #Convert timestamp to datetime and then to day.
 edx <- edx %>% mutate(date = as_datetime(timestamp))
@@ -163,6 +163,7 @@ rmse <- sapply(lambda, function(l){
 })
 rmse
 
+#Model name: Regularized Model with Movie, User, Time & Genre Effect.
 #Final evaluation of validation set with final algorithm.
 finalRmse <- sapply(lambda, function(l){
   mu <- mean(trainSet$rating) #Feature Composition: Average movie rating mu.
@@ -190,7 +191,7 @@ finalRmse <- sapply(lambda, function(l){
     left_join(b_u, by = "userId") %>%
     left_join(b_t, by = "date") %>%
     left_join(b_g, by = "genres") %>%
-    mutate(pred = mu + b_i + b_u + b_t + b_g) %>% #Perform prediction based on feature composition
+    mutate(pred = mu + b_i + b_u + b_t + b_g) %>% #Perform prediction based on feature composition.
     .$pred 
      return(RMSE(predicted_ratings, validation$rating)) #Calculate RMSE.
 })
