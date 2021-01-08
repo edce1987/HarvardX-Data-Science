@@ -317,7 +317,7 @@ mu_hat
 
 naive_rmse <- RMSE(test_set$rating, mu_hat)
 naive_rmse
-
+?rep
 predictions <- rep(2.5, nrow(test_set))
 RMSE(test_set$rating, predictions)
 
@@ -459,20 +459,29 @@ test_set <- movielens[test_index,]
 test_set <- test_set %>% 
   semi_join(train_set, by = "movieId") %>%
   semi_join(train_set, by = "userId")
+
 RMSE <- function(true_ratings, predicted_ratings){
   sqrt(mean((true_ratings - predicted_ratings)^2))
 }
+
 mu_hat <- mean(train_set$rating)
+
 naive_rmse <- RMSE(test_set$rating, mu_hat)
+
 rmse_results <- data_frame(method = "Just the average", RMSE = naive_rmse)
+
 mu <- mean(train_set$rating) 
+
 movie_avgs <- train_set %>% 
   group_by(movieId) %>% 
   summarize(b_i = mean(rating - mu))
+
 predicted_ratings <- mu + test_set %>% 
   left_join(movie_avgs, by='movieId') %>%
   .$b_i
+
 model_1_rmse <- RMSE(predicted_ratings, test_set$rating)
+
 rmse_results <- bind_rows(rmse_results,
                           data_frame(method="Movie Effect Model",
                                      RMSE = model_1_rmse ))
