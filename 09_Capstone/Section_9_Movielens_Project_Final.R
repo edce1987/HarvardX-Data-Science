@@ -71,7 +71,7 @@ edx <- edx %>% mutate(date = round_date(date, unit = "day"))
 dim(edx)
 
 #Assumption: Users that rate more often have more experience and therefore a better judgment which will reduce RMSE.
-edx <- edx %>% group_by(userId) %>% filter(n() >= 125) %>% ungroup()
+edx <- edx %>% group_by(userId) %>% filter(n() >= 50) %>% ungroup()
 dim(edx)
 
 #Split edx data into train and test set
@@ -96,7 +96,7 @@ RMSE <- function(true, predicted){
 #Model name: Regularized Model with Movie, User, Time & Genre Effect.
 #Find optimal lambda for the model.
 #I recommend not running this code since it will take hours.
-lambdas <- seq(5.0, 5.3, 0.001)
+lambdas <- seq(4.8, 5.2, 0.001)
 rmses <- sapply(lambdas, function(l){
   mu <- mean(trainSet$rating) #Feature Composition: Average movie rating mu
   b_i <- trainSet %>% #Feature Composition: Regularized Movie Effect b_i
