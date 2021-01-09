@@ -71,7 +71,7 @@ edx <- edx %>% mutate(date = round_date(date, unit = "day"))
 dim(edx)
 
 #Assumption: Users that rate more often have more experience and therefore a better judgment which will reduce RMSE.
-edx <- edx %>% group_by(userId) %>% filter(n() >= 125) %>% ungroup()
+edx <- edx %>% group_by(userId) %>% filter(n() >= 200) %>% ungroup()
 dim(edx)
 
 #Split edx data into train and test set
