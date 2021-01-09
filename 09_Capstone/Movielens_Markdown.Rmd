@@ -8,7 +8,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-<<<<<<< HEAD
+
 ## Motivation
 The idea is to build a movie recommendation system on the basis of a deprecated movielens dataset as part of the edx Capstone project.
 It's purpose is to predict a user rating for a certain movie based on known data, patterns and behavior.
@@ -23,8 +23,6 @@ As part of the Capstone project, we have received a dataset from movielens which
 ## Evaluation
 
 ## Summary
-=======
->>>>>>> 5dff99deef4154d5aabc5c3a7483490e44a9ec83
 
 ## R Markdown
 

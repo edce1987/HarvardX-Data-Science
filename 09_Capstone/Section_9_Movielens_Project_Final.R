@@ -3,9 +3,9 @@
 #file, and an R script that generates your predicted movie ratings and calculates
 #RMSE. Your grade for the project will be based on two factors:
 #  
-#  Your report and script (75%)
+#Your report and script (75%)
 #The RMSE returned by testing your algorithm on the validation set (the final 
-#  hold-out test set) (25%)
+#hold-out test set) (25%)
 #Note that to receive full marks on this project, you may not simply copy code 
 #from other courses in the course series and be done with your analysis. Your 
 #work on this project needs to build on code that is already provided.#
@@ -50,7 +50,7 @@
 #Project Due Date
 #Submissions for the Movielens project are due one week before course close, 
 #on January 8, 2021, at 23:59 UTC. This allows time for peer grading to occur! 
-#  Peer grades are due at course close, on January 15, 2021, at 23:59 UTC.
+#Peer grades are due at course close, on January 15, 2021, at 23:59 UTC.
 #
 #Peer Feedback
 #You are strongly encouraged to give your peers thoughtful, specific written 
@@ -66,26 +66,22 @@ library(lubridate)
 ##Data Wrangling
 #Assumption: The timestamp which indicates when a certain movie was rated by a certain user has an effect on the movie rating.
 #Convert timestamp to datetime and then to day.
-edx <- edx %>% mutate(date = as_datetime(timestamp))
-edx <- edx %>% mutate(date = round_date(date, unit = "day"))
-dim(edx)
+edxT <- edx %>% mutate(date = as_datetime(timestamp))
+edxT <- edx %>% mutate(date = round_date(date, unit = "day"))
+dim(edxT)
 
 #Assumption: Users that rate more often have more experience and therefore a better judgment which will reduce RMSE.
-<<<<<<< HEAD
-edx <- edx %>% group_by(userId) %>% filter(n() >= 200) %>% ungroup()
-=======
-edx <- edx %>% group_by(userId) %>% filter(n() >= 50) %>% ungroup()
->>>>>>> 72599e15c75c6a00f4833102d4cbc06e70adf010
-dim(edx)
+edxT <- edxT %>% group_by(userId) %>% filter(n() >= 100) %>% ungroup()
+dim(edxT)
 
 #Split edx data into train and test set
 #Setting seed to 1 to make results reproducible with sample.kind = "Rounding" for R Version > 3.5.
 set.seed(1, sample.kind = "Rounding")
 
 #Create index to split data (80% train & 20% test)
-testIndex <- createDataPartition(y = edx$rating, times = 1, p = 0.2, list = FALSE)
-trainSet <- edx[-testIndex, ]
-testSet <- edx[testIndex, ]
+testIndex <- createDataPartition(y = edxT$rating, times = 1, p = 0.2, list = FALSE)
+trainSet <- edxT[-testIndex, ]
+testSet <- edxT[testIndex, ]
 
 #Make sure UserId and MovieId are existing in train and test set
 testSet <- testSet %>% 
@@ -100,7 +96,7 @@ RMSE <- function(true, predicted){
 #Model name: Regularized Model with Movie, User, Time & Genre Effect.
 #Find optimal lambda for the model.
 #I recommend not running this code since it will take hours.
-lambdas <- seq(4.8, 5.2, 0.001)
+lambdas <- seq(4.9, 5.2, 0.001)
 rmses <- sapply(lambdas, function(l){
   mu <- mean(trainSet$rating) #Feature Composition: Average movie rating mu
   b_i <- trainSet %>% #Feature Composition: Regularized Movie Effect b_i
