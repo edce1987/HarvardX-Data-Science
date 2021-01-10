@@ -66,12 +66,11 @@ library(lubridate)
 ##Data Wrangling
 #Assumption: The timestamp which indicates when a certain movie was rated by a certain user has an effect on the movie rating.
 #Convert timestamp to datetime and then to day.
-edxT <- edx %>% mutate(date = as_datetime(timestamp))
-edxT <- edx %>% mutate(date = round_date(date, unit = "day"))
+edxT <- edx %>% mutate(date = round_date(as_datetime(timestamp), unit = "day"))
 dim(edxT)
 
 #Assumption: Users that rate more often have more experience and therefore a better judgment which will reduce RMSE.
-edxT <- edxT %>% group_by(userId) %>% filter(n() >= 100) %>% ungroup()
+edxT <- edxT %>% group_by(userId) %>% filter(n() >= 50) %>% ungroup()
 dim(edxT)
 
 #Split edx data into train and test set
@@ -96,7 +95,7 @@ RMSE <- function(true, predicted){
 #Model name: Regularized Model with Movie, User, Time & Genre Effect.
 #Find optimal lambda for the model.
 #I recommend not running this code since it will take hours.
-lambdas <- seq(4.9, 5.2, 0.001)
+lambdas <- seq(4.95, 5.15, 0.001)
 rmses <- sapply(lambdas, function(l){
   mu <- mean(trainSet$rating) #Feature Composition: Average movie rating mu
   b_i <- trainSet %>% #Feature Composition: Regularized Movie Effect b_i
