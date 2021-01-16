@@ -95,7 +95,7 @@ RMSE <- function(true, predicted){
 #Model name: Regularized Model with Movie, User, Time & Genre Effect.
 #Find optimal lambda for the model.
 #I recommend not running this code since it will take hours.
-lambdas <- seq(5, 5.1, 0.001)
+lambdas <- seq(4.9, 5.15, 0.001)
 rmses <- sapply(lambdas, function(l){
   mu <- mean(trainSet$rating) #Feature Composition: Average movie rating mu
   b_i <- trainSet %>% #Feature Composition: Regularized Movie Effect b_i
@@ -191,9 +191,9 @@ finalRmse <- sapply(lambda, function(l){
     left_join(b_t, by = "date") %>%
     left_join(b_g, by = "genres") %>%
     mutate(pred = mu + b_i + b_u + b_t + b_g) %>% #Perform prediction based on feature composition.
-    .$pred 
-     return(RMSE(predicted_ratings, validation$rating)) #Calculate RMSE.
+    .$pred #Pull predictions. 
+    return(RMSE(predicted_ratings, validation$rating)) #Calculate RMSE.
 })
 
-#Print final RMSE
+#Print final RMSE.
 finalRmse

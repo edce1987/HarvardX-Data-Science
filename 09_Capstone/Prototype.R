@@ -1,6 +1,7 @@
 l <- lambda
 
 mu <- mean(trainSet$rating) #Feature Composition: Average movie rating mu.
+med <- median(trainSet$rating)
 
 b_i <- trainSet %>% 
   group_by(movieId) %>%
@@ -34,11 +35,13 @@ predicted_ratings <- validation %>%
   left_join(b_u, by = "userId") %>%
   left_join(b_t, by = "date") %>%
   left_join(b_g, by = "genres") %>%
-  mutate(pred = mu + b_i + b_u + b_t + b_g) %>% #Perform prediction based on feature composition.
+  mutate(pred = mu + b_i + b_u + b_t + b_g) %>%
+  mutate(pred = ifelse(is.na(pred), mu, pred)) %>%
   .$pred 
 
 RMSE(predicted_ratings, validation$rating)
 
+#View(predicted_ratings)
 length(predicted_ratings)
 sum(is.na(predicted_ratings))
 mean(is.na(predicted_ratings))
