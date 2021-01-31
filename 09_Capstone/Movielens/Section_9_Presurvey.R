@@ -74,6 +74,8 @@ edx %>% group_by(movieId, title) %>%
   summarize(count = n()) %>%
   arrange(desc(count))
 
+edx %>% select(movieId, title) %>% filter(movieId == 291)
+
 #Q7
 edx %>% group_by(rating) %>% summarise(n=n()) %>% arrange(desc(n))
 

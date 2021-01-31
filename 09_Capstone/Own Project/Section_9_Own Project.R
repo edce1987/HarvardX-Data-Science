@@ -20,6 +20,7 @@ library(caret)
 library(gam)
 library(rpart)
 library(matrixStats)
+library(randomForest)
 
 #A direct download from Kaggle is not possible, there is a workaround using 
 #your login name and password which we will not do here.
@@ -88,10 +89,17 @@ RMSE(test_set$Score, pred_ensemble)
 #Looks like the random forest and der Rborist models have the best prediction
 #power, even better than the ensemble model. Hence, we will focus on those two
 #and find the best parameters using the tune grid.
-
-fitRf <- train(Score ~ ., method = "rf", trControl = control, tuneGrid = data.frame(mtry = seq(1, 10, 0.1)), data = train_set)
+set.seed(1, sample.kind="Rounding")
+fitRf <- train(Score ~ ., method = "rf", trControl = control, tuneGrid = data.frame(mtry=seq(1,10,0.1)), data = train_set)
 ggplot(fitRf)
 fitRf$bestTune
 fitRf$finalModel
 predRf <- predict(fitRf, test_set)
 RMSE(predRf, test_set$Score)
+
+fitRandomForest <- randomForest(Score ~ ., train_set)
+predRandomForest <- predict(fitRandomForest, test_set)
+RMSE(predRandomForest, test_set$Score)
+
+imp <- as.data.frame(importance(fitRandomForest)) %>% arrange(desc(IncNodePurity))
+imp
