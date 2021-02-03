@@ -54,7 +54,7 @@ edx <- rbind(edx, removed)
 
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
-####STARTING FROM HERE MY MODEL STARTS
+####MovieLens Movie Reccomendation System
 
 #Load additional libraries
 library(lubridate)
