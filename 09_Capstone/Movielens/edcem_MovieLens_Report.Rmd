@@ -1,11 +1,11 @@
 ---
-title: "Data Science: Capstone - MovieLens Report"
+title: "Data Science: Capstone - MovieLens Recommendation System Report"
 author: "Edin Ceman"
 date: "31st January 2021"
 output: 
   pdf_document:
     latex_engine: xelatex
-sansfont: Calibri Light 
+mainfont: Calibri Light 
 ---
 
 ```{r setup, include=FALSE}
