@@ -21,6 +21,7 @@ library(caret)
 library(Rborist)
 library(rpart)
 library(DataExplorer)
+library(data.table)
 
 # To my knowledge, a direct download from Kaggle is not possible.
 # There is however a workaround using your Kaggle login name and password but we chose another way here.
@@ -37,7 +38,11 @@ setwd("/Users/edce/projects/HarvardX-Data-Science/09_Capstone/Own Project")
 
 # Unzip, extract and read the data from archive.zip.
 # The archive contains a csv-file with a header and strings. Hence, header is true and strings are converted to factors directly.
-data <- read.csv(unz("archive.zip", filename = "BankChurners.csv"), header = TRUE, stringsAsFactors = T) 
+# I noticed when using the following code with read.csv(...) on a MacBook, the data was not imported correctly (only 9857 rows). 
+# The correct import of the dataset should have a header and 10.127 rows.
+data <- read.csv(unz("archive.zip", filename = "BankChurners.csv"), header = TRUE, stringsAsFactors = TRUE)
+# If you encounter above mentioned error, please use the following code that uses fread(...)
+data <- fread(cmd = 'unzip -cq archive.zip', header = TRUE, stringsAsFactors = TRUE)
 
 # Inspect if conversion was done correctly.
 str(data)
@@ -45,7 +50,7 @@ str(data)
 ## Data Exploration
 
 # To quickly explore the dataset, we use the package "DataExplorer" which is a very useful package to quickly generate a report that gives you a detailed insight into you dataset.
-DataExplorer::create_report(dataset)
+DataExplorer::create_report(data)
 
 # From the report we receive basic statistics about our dataset, i.e. rows, columns etc.
 # We also see that there are no NAs in the columns, so we don't have to fill them.
@@ -169,15 +174,3 @@ F_meas(data=predEnsemble, reference=test_set$Attrition_Flag)
 ## Limitations
 # Since the underlying dataset has has a prevalence of 16% for the attributed customers, it may not be reliable enough to have a robust prediction of churning customers.
 # However, the model performs very well with the data at hand and can be useful as a basis for further development.
-
-## Parallelization
-library(parallel)
-detectCores()
-set.seed(1, sample.kind="Rounding")
-results <- mclapply(models, function(model) {
-  print(model)
-  fit <- train(Attrition_Flag ~ ., method = model, trControl = control, data = train_set)
-  prediction <- predict(fit, test_set)
-  data.frame(client = test_set$CLIENTNUM, model = prediction)
-}, mc.cores = detectCores())
-results <- as.data.frame(results)
