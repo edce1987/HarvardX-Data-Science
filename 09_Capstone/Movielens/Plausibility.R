@@ -1,4 +1,4 @@
-l <- 4.9
+l <- 4.80
 
 avg <- mean(trainSet$rating) # Feature Composition: Overall average rating avg.
 
@@ -43,4 +43,8 @@ RMSE(predicted_ratings$pred, validation$rating)
 length(predicted_ratings$pred)
 sum(is.na(predicted_ratings$pred))
 
+length(validation$rating)
+sum(is.na(validation$rating))
+
 View(predicted_ratings)
+top <- predicted_ratings %>% group_by(title) %>% summarize(n=n(), b_m = mean(b_movie)) %>% arrange(desc(b_m))

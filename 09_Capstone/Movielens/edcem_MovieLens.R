@@ -103,7 +103,7 @@ RMSE <- function(true, predicted){
 # Hence, we need to find the optimal "penalty parameter" lambda for the regularized model. I have narrowed the range of the optimal parameter to avoid excessive computing time. 
 # From my trials I narrowed down the optimal area somewhere between 5.20 to 5.40 in 0.001 steps which still equals 200 iterations.
 # I recommend not running this code since it will take very long depending on your hardware. 
-lambdas <- seq(4.80, 4.95, 0.001)
+lambdas <- seq(1.0, 10.00, 0.1)
 
 # Training & evaluation of the regularized model using the train & test set. 
 # The goal of the model is to capture the different biases (see below) in relation to the average movie rating to predict a movie rating for a certain user.
