@@ -31,7 +31,7 @@ library(DataExplorer)
 
 # Use the following code to get or set your wd accordingly.
 getwd()
-setwd("C:/Users/edin.ceman/Documents/GitHub/HarvardX-Data-Science/09_Capstone/Own Project")
+setwd("/Users/edce/projects/HarvardX-Data-Science/09_Capstone/Own Project")
 
 ## Data Input
 
@@ -169,3 +169,15 @@ F_meas(data=predEnsemble, reference=test_set$Attrition_Flag)
 ## Limitations
 # Since the underlying dataset has has a prevalence of 16% for the attributed customers, it may not be reliable enough to have a robust prediction of churning customers.
 # However, the model performs very well with the data at hand and can be useful as a basis for further development.
+
+## Parallelization
+library(parallel)
+detectCores()
+set.seed(1, sample.kind="Rounding")
+results <- mclapply(models, function(model) {
+  print(model)
+  fit <- train(Attrition_Flag ~ ., method = model, trControl = control, data = train_set)
+  prediction <- predict(fit, test_set)
+  data.frame(client = test_set$CLIENTNUM, model = prediction)
+}, mc.cores = detectCores())
+results <- as.data.frame(results)
