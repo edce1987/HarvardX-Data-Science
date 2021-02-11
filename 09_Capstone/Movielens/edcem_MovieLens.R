@@ -54,11 +54,16 @@ edx <- rbind(edx, removed)
 
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
-#### My Capstone project start from here.                ####
-#### MovieLens Movie Recommendation System by Edin Ceman ####
+#### My Capstone Project start from here ####
+#### MovieLens Movie Recommendation Model ####
+
+# Install additional packages if not available already
+if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 
 # Load additional libraries
 library(lubridate)
+library(ggplot2)
 
 ## Data Wrangling
 
@@ -97,16 +102,19 @@ RMSE <- function(true, predicted){
 
 ## Modeling
 
-# Name: Regularized Model with Movie, User, Time & Genre Effect.
-# We want to capture different "biases" in the training dataset to identify the effects that influence the resulting rating. 
-# We also want to use a regularized model to avoid overfitting. 
+# Name: Regularized Model with Movie, Restricted User, Time & Genre Effect.
+# We want to capture different "biases" in the training data set to identify the effects / biases that influence the resulting rating. 
+# We want to use a regularized model to avoid the problem of overfitting. 
 # Hence, we need to find the optimal "penalty parameter" lambda for the regularized model. I have narrowed the range of the optimal parameter to avoid excessive computing time. 
-# From my trials I narrowed down the optimal area somewhere between 5.20 to 5.40 in 0.001 steps which still equals 200 iterations.
-# I recommend not running this code since it will take very long depending on your hardware. 
-lambdas <- seq(1.0, 10.00, 0.1)
+# From my trials I narrowed down the optimal area somewhere between 4.5 to 5.5 in 0.1 steps which equals 10 iterations.
+# We could also conduct a finer penalty parameter search, e.g. 1 to 10 in 0,001 steps to optimize our algorithm.
+# However this would most probably result in overfitting, hence we stick to the selected sequence.
+lambdas <- seq(4.5, 5.5, 0.1)
 
-# Training & evaluation of the regularized model using the train & test set. 
-# The goal of the model is to capture the different biases (see below) in relation to the average movie rating to predict a movie rating for a certain user.
+# Training & evaluation of the model using the train & test set. 
+# The goal of the model is to capture the different biases or effects that have influence on a user rating.
+# The biases / effects are calculated based on selected features from the data set and determined in relation to e.g. the movie rating, overall average and other effects (see below).
+# The bias is then regularized to account for overfitting.
 rmses <- sapply(lambdas, function(l){
   avg <- mean(trainSet$rating) # Feature Composition: Overall average rating: avg.
   movie_avg <- trainSet %>% # Feature Composition: Movie average for filling NAs later on.
@@ -131,20 +139,29 @@ rmses <- sapply(lambdas, function(l){
     group_by(genres) %>%
     summarize(b_genre = sum(rating - avg - b_movie - b_user - b_time)/(n()+l))
   predicted_ratings <- testSet %>% # Perform prediction based on feature composition.
-    left_join(movie_avg, by = "movieId") %>% # Left join of the created biases and features to the test set.
+    left_join(movie_avg, by = "movieId") %>% # Left join of the created biases and features on the test set.
     left_join(b_movie, by = "movieId") %>%
     left_join(b_user, by = "userId") %>%
     left_join(b_time, by = "date") %>%
     left_join(b_genre, by = "genres") %>%
     mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>% # Perform prediction based on feature composition.
-    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no value available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available.
-    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # Replace remaining NAs with overall average.
+    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # 1. Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no prediction available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available too.
+    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # 2. Replace remaining NAs with overall average.
     mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>% # Computed predictions are numerical and can be out of the "allowed" rating range from 0.5 to 5.0. To avoid penalties in the RMSE, we trim these values to the nearest allowed rating.
     .$pred
   return(RMSE(predicted_ratings, testSet$rating))
 })
 
-# Find optimal lambda where the RMSE is minimized.
+# Plot the rmses and the lambdas
+optResults <- data.frame(lambda = lambdas, rmse = rmses) %>% 
+  ggplot(aes(lambda, rmse)) + 
+  geom_point() + 
+  geom_smooth() +
+  geom_vline(xintercept = lambdas[which.min(rmses)], color = "red")
+optResults
+#qplot(lambdas, rmses) 
+
+# Find optimal penalty parameter lambda where the RMSE is minimized.
 lambda <- lambdas[which.min(rmses)]
 
 # Print optimal lambda
@@ -181,18 +198,18 @@ rmse <- sapply(lambda, function(l){
     left_join(b_time, by = "date") %>%
     left_join(b_genre, by = "genres") %>%
     mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>% # Perform prediction based on feature composition.
-    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no value available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available.
-    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # Replace remaining NAs with overall average.
+    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # 1. Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no value available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available too.
+    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # 2. Replace remaining NAs with overall average.
     mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>% # Computed predictions are numerical and can be out of the "allowed" rating range from 0.5 to 5.0. To avoid penalties in the RMSE, we trim these values to the nearest allowed rating.
     .$pred
   return(RMSE(predicted_ratings, testSet$rating))
 })
 
-# Print RMSE.
+# Print RMSE from train & test set.
 rmse
 
 #### Final prediction of ratings using the validation set.                ####
-#### Model name: Regularized Model with Movie, User, Time & Genre Effect. ####
+#### Model name: Regularized Model with Movie, Restricted User, Time & Genre Effect. ####
 finalRmse <- sapply(lambda, function(l){
   avg <- mean(trainSet$rating) # Feature Composition: Overall average rating avg.
   movie_avg <- trainSet %>%
@@ -224,8 +241,8 @@ finalRmse <- sapply(lambda, function(l){
     left_join(b_time, by = "date") %>%
     left_join(b_genre, by = "genres") %>%
     mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>% # Perform prediction based on feature composition.
-    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no value available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available.
-    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # Replace remaining NAs with overall average.
+    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # 1. Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no prediction available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available too.
+    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # 2. Replace remaining NAs with overall average.
     mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>% # Computed predictions are numerical and can be out of the "allowed" rating range from 0.5 to 5.0. To avoid penalties in the RMSE, we trim these values to the nearest allowed rating.
     .$pred # Pull predictions. 
   return(RMSE(predicted_ratings, validation$rating)) # Calculate RMSE.

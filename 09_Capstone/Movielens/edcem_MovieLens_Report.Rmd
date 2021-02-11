@@ -1,7 +1,7 @@
 ---
-title: "Data Science: Capstone - MovieLens Recommendation System Report"
-author: "Edin Ceman"
-date: "31st January 2021"
+title: "Data Science: Capstone - MovieLens Recommendation Model Report"
+author: "by Edin Ceman"
+date: "14th February 2021"
 output: 
   pdf_document:
     latex_engine: xelatex
@@ -12,91 +12,90 @@ mainfont: Calibri Light
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Introduction 
+# 1. Introduction
+The following report will give you an overview of my Data Science: Captone MovieLens project. In the Introduction section background information on the "MovieLens Collection" is provided. This is followed by a description of the used data set, the goal of the project and the key steps that were performed. In the Methods & Analysis section, the modeling approach, process and methods will be explained. The Results section will then discuss the results of the model. Finally, the Conclusion section will summarize the model outcome and discuss the limitations. 
 
-
-(Section that describes the dataset and summarizes the goal of the project and key steps that were performed.)
-
-
-## The MovieLens Collection 
+## 1.1 The MovieLens Collection 
 The MovieLens dataset is a publicly available source of information containing user ratings for movies over a defined period of time. This data was collected and made available by GroupLens Research on the web site (http://movielens.org). There are different kinds of sizes of the MovieLens data. While there is also a full-size version of the data set available, in this course we use the 10m version to facilitate the modeling process while also reducing the necessary computing power.
 
-## Dataset
-The 10m dataset from MovieLens is a smaller version of the full-size dataset and contains 10000054 ratings and 95580 tags applied to 10681 movies by 71567 users of the online movie recommender service MovieLens. From the dataset, the following fields are extracted in the Data Science: Capstone course:
+## 1.2 Dataset
+The 10m dataset from MovieLens is a smaller version of the full-size dataset and contains 10,000,054 ratings and 95,580 tags applied to 10,681 movies by 71,567 users of the online movie recommender service MovieLens. From the dataset, the following information is extracted as part of the Data Science: Capstone course:
 
+* **userId:** This is an integer representing a unique user ID. Movielens users were selected at random for inclusion. Their ids have been anonymized.
 
-* **userId** : This is an integer representing a unique user ID. Movielens users were selected at random for inclusion. Their ids have been anonymized.
+* **movieId:** This is a numeric representing a unique movie ID.
 
-* **movieId** : This is a numeric representing a unique movie ID.
+* **rating:** This is a numeric representing the user rating for a movie. It can display the following discrete values (0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0). 
 
-* **rating** : This is a numeric representating the user rating for a movie. It can display the following discrete values (0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0). 
+* **timestamp:** This is an integer representing the exact time when the rating for a certain movie by a certain user was made. 
 
-* **timestamp** : This is an integer representing the exact time when the user rating for a certain movie was made. 
+* **title:** This is a character value displaying the movie's full title.
 
-* **title** : This is a character value displaying the movie's title.
+* **genres:** This is a character representing the genre of the movie. Movies can be in multiple genres, in this case they are all listed and separated with "|".
 
-* **genres** : This is a character representing the genre of the movie.
+## 1.3 Goal
+The goal is to build a movie recommendation system based on the provided MovieLens data set. Following that, the aim of the recommendation system is to predict a rating for a certain user and a certain movie at a certain point in time based on his previous ratings and and behavior. To achieve this goal, our system captures different effects or biases in the data set to identify the parameters that shape a user rating. This information can then be used to provide movie recommendations to a certain user.
 
+## 1.4 Key Steps
+To build the movie recommendation system, the following key steps were performed:
 
-## Goal
-The goal of the Capstone Project at hand is to build a movie recommendation system based on the MovieLens data set. Hence, the aim of the system of to predict a rating for a certain user and a certain movie at a certain point in time based on his previous ratings and and behavior.
+* **Data Initiation:** First, the "10m MovieLens" data set is downloaded, and the relevant information is extracted, transformed and loaded into R. The downloaded data set is then split into an "edx" set (90%) for the purpose of developing, training and testing, and a final hold-out "validation" data set (10%) for the final evaluation of the recommendation system.
 
+* **Data Preparation:** Next, the "edx" data set is checked for NAs, filtered and enriched with additional features for the model design. The "edx" set is then split again into a train (80%) and a test (20%) set to develop, train and evaluate the recommendation model.
 
-## Key Steps
-To build the model, the following key steps are conducted:
+* **Model Design:** In the next step, the recommendation model is build using the train set, and evaluated with the test set. The model is designed such that it captures certain biases or effects in the train data (e.g. user, movie, time and genre effect). Additionally, regularization is applied to the effects to account for overfitting. The Root Mean Squared Error (RMSE) is used to evaluate the model performance and to select the optimal and final model parameters.
 
-* Initially, the 10 MovieLens data is downloaded and the above described fields are extraced and put into tidy format. The relevant code has been provided in the edx Course "Data Science: Capstone".
+* **Model Evaluation:** The final model is then evaluated using the final hold-out validation set. Predictions are calculated for the validation set and those are used in the RMSE to determine the final model performance.  
 
-* This data set is then split into a dataset called "edx" and a data set called "validation". The first one contains 90% of the 10m MovieLens data set and shall be used to construct the movie recommendation system. The latter data set contains 10% of the 10m data set and represents the final holdout data set that is used to evaluation the constructed recommendation system. It is not used during the model creation process.
+* **Results:** The final model results are shown and discussed.
 
-* The edx dataset is then enriched with additional information (date is a feature constructed from the timestamp, and we filter to include only users that have at least 50 ratings). The edx data set is then again split into a train (90%) and test set (10%)
+* **Conclusion:** Lastly, the report is summarized and limitations and potential future work is discussed.
 
-* In the next step, the model is build on the basis of the train set. The model captures certain effects (e.g. user, movie, time and genre effect). Furthermore regularization is used to include a penalty for large deviations.
+## 2. Methods & Analysis
+This section explains the approach for preparing the data and building the recommendation model. The data initiation and data preparation sections describe how the MovieLens data is loaded and prepared. On the basis of that, the section Model Design describes describes the rationale and the methods used to build the recommendation model. The Model Evaluation section describes the evaluation process and metrics used to determine the model performance. 
 
-* The optimal lambda or penalty paramter is found.
+# 2.1 Data Initiation
+The relevant code to download and create the "edx" and "validation" set has been kindly provided in the edx course "Data Science: Capstone". The provided code downloads the "10m MovieLens" data from source, extracts and transforms the relevant information into R. The **movieId** is transformed into a numeric data type, the **title** and **genres** are transformed into a character data type. This data set is then split into a data set with the name "edx" and a data set with the name "validation". The "edx" set contains 90% (or 9,000,055 rows) of the 10m MovieLens data set and shall be used to build, train and optimize the recommendation model. The "validation" set contains 10% (or 999,999 rows) from the 10m data set and represents the final hold-out data set that is only used in the final evaluation of the recommendation model. It is important to mention that the validation set is **not used** for the development and training of the model.
 
-* The model is evaluated using the validation set with the optimal parameter.
+# 2.2 Data Preparation
+The edx dataset is used for the purpose of developing and training the recommendation model. Initially, the edx set is checked for NAs. The edx set does not have NAs, hence no filling of NAs has to be conducted. Next, the data set is enriched with additional information for the model development. The feature **date** is created from the **timestamp** since we want to include a "Time Effect" in the model later on. The assumption is that the time a rating Additionally, the edx set is filtered to include only users that have at least 15 movie ratings. The rationale is provided in the model development section. This step reduces the size of the edx set to 8,999,671 rows. Finally, the prepared edx data set **edxT** is then split again into a train set (80%) (or 7,199,736 rows) and a test set (20%) (or 1,799,889 rows) to be used in the model development and parameter optimization.
 
-* Since previous data filtering produces NAs in the validation set, those are replaced by averages.
+# 2.3 Model Development
+The recommendation model we want to build is called **Regularized Recommendation Model with Movie, Restricted User, Time & Genre Effect**. The goal of the model is to predict a rating for a certain movie, by a certain user at a certain point in time using the MovieLens data. The model is designed such that it captures different biases or effects in the training data set to identify the **biases** or **effects** that influence the resulting rating of a user for a movie. For the model, we use a movie, user, time and genre bias. Those will be explained later in this section. For each of the selected effects, the concept of **regularization** is used to avoid overfitting. This issue arises when a model is too specific, i.e. such that it performs well on a well known data set, but rather poorly on an unknown data set. 
 
-* Finally, the RMSE is computed for our model on with the results from the validation set. 
+To apply the concept regularization, we introduce a penalty parameter **lambda** to each bias. The penalty parameter is applied to penalize the effect of a bias such that it's influence on the predicted rating is adjusted. The penalty parameter can be considered as a tuning parameter. Hence, we will define a range of lambdas, and repeat the model training and evaluation against the test set to select the optimal lambda. From my trials, I narrowed down the optimal lambda range to be somewhere between 4.5 to 5.5 in 0.1 steps which equals 10 iterations to avoid excessive computing. We could also conduct a finer penalty parameter search, e.g. 1 to 10 in 0,001 which would result in 9,000 steps to optimize our algorithm. However this approach would most probably result in overfitting, hence we will stick to the selected sequence from 4.5 to 5.5 in 0.1 steps.
 
+To build the recommendations model, we will use the train set and evaluate it with the test set to find our optimal lambda. We use the Root Mean Squared Error (RMSE) to evaluate the model performance. The RMSE is constructed such that it calculates the standard deviation of the residuals, i.e. the difference between the true rating and the predicted rating. The RMSE is always non-negative due to the residuals getting squared, and it therefore penalizes large deviations disproportionally. Hence it is sensitive to outliers. The smaller the RMSE is, the better is the performance of our model.
 
-## Methods & Analysi
-That explains the process and techniques used, including data cleaning, data exploration and visualization, insights gained, and your modeling approach.
+First, the average movie rating is calculated. Then, we want to capture certain effect as explained in the Data Science: Machine Learning course. The model contains the following effects:
 
-### Process
-We use the train set to construct our model. First, the average movie rating is calculated. Then, we want to capture certain effect as explained in the Data Science: Machine Learning course. The model contains the following effects:
+* **Movie Effect:** This parameter captures the effect a certain movie has on the rating, while adjusting for the overall average rating mu and regularizing it.
 
+* **User Effect:** This parameter captures the effect a certain user has on the rating, while adjusting for the overall average and the movie effect and regularizing it.
 
-* Movie Effect: This parameter captures the effect a certain movie has on the rating while adjusting for the overall average rating mu.
+* **Time Effect:** This parameter captures the effect the date (time) has when a rating was made has on the rating, while adjusting for the overall average mu and the movie and user effect and regularizing it.
 
-* User Effect: This parameter caputres the effect a certain user has on the rating while adjusting for the overall average and the movie effecg.
+* **Genre Effect:** This parameter captures the effect the genre of the movie has on the rating, while adjusting for the movie, user, and time effect ans regularizing it.
 
-* Time Effect: This parameter captures the effect the date (time) when a rating was made has on the rating while adjusting for the overall average mu and the movie and user effect.
+```{r optresults}
+ggplot(optResults, aes(lambda, rmse)) + geom_point()
+```
 
-* Genre Effect: This parameter captures the effect the genre of the movie has on the rating while adjusting for the movie, user, and time effect.
-
-
-For each of the effect, the concept of regularization is used. This concept includes a penalty parameter lambda and each effect is adjusted to penalize large deviations such that we achieve regularization.
-
-
+# 2.3 Model Evaluation
 To find the optimal lambda, the modeling process is repeated 100 times. From own experimenting and to avoid you having to let your computer run for several hours, I have narrowed the lambda range to 4.9 to 5.15 (as opposed to 1 to 10 in 0.01 steps). Of course, If you want to verify the optimal lambda, you can run the code with the full lambda range. But be warned that it will take a very long time.
-
 
 Since our applied data restrictions, especially the restriction to users who have at least 50 ratings, some NAs are produced. Those NAs are replaced by the overall average mu to fill the blanks.
 
+# 3. Results
 ## Results section
 Present the modeling results and discusses the model performance.
 To evaluate the model results, we use the root mean squared error (RMSE). The RMSE is a measure that...
 When evaluating our model against the validation set using the RMSE, we achieve a value of 0.85.
 
-
-## Conclusion 
+# 4. Conclusion 
 Section that gives a brief summary of the report, its limitations and future work.
 The report at hand has given you the key insights of my Capstone Project. Initially, the MovieLens Project and data set has been explained. Following that, the key steps have been described. Afterwards, the modeling process as well as the approach for construcing the model has been explained and reasoning has been provided. Finally, the results have been evaluated and presented.
 The limitations of this project are that we have only used a restricted dataset (10m) instead of the full-scope dataset. Also, not all available fields and information of the MovieLens data set have been used such that certain effects could not be evaluated. Furthermore, the limitations of the computing power of a regular notebook or desktop pc did not allow for the application of more advanced modeling techniques, e.g. using ensemble methods with Random Forests, KNN, GamLoess and many more.
-
 
 0 points: The report is either not uploaded or contains very minimal information AND/OR the report appears to violate the edX Honor Code.
 10 points: Multiple required sections of the report are missing.
@@ -106,18 +105,4 @@ The limitations of this project are that we have only used a restricted dataset 
 25 points: The report includes all required sections, but the report is difficult to follow or missing supporting detail in one section.
 30 points: The report includes all required sections and is well-drafted and easy to follow, but with minor flaws in multiple sections.
 35 points: The report includes all required sections and is easy to follow, but with minor flaws in one section.
-40 points: The report includes all required sections, is easy to follow with good supporting detail throughout, and is insightful and innovative. 
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+40 points: The report includes all required sections, is easy to follow with good supporting detail throughout, and is insightful and innovative.
