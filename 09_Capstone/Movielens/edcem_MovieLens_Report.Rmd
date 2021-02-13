@@ -57,8 +57,110 @@ This section explains the approach for preparing the data and building the recom
 # 2.1 Data Initiation
 The relevant code to download and create the "edx" and "validation" set has been kindly provided in the edx course "Data Science: Capstone". The provided code downloads the "10m MovieLens" data from source, extracts and transforms the relevant information into R. The **movieId** is transformed into a numeric data type, the **title** and **genres** are transformed into a character data type. This data set is then split into a data set with the name "edx" and a data set with the name "validation". The "edx" set contains 90% (or 9,000,055 rows) of the 10m MovieLens data set and shall be used to build, train and optimize the recommendation model. The "validation" set contains 10% (or 999,999 rows) from the 10m data set and represents the final hold-out data set that is only used in the final evaluation of the recommendation model. It is important to mention that the validation set is **not used** for the development and training of the model.
 
+```{r, echo = FALSE}
+##########################################################
+# Create edx set, validation set (final hold-out test set)
+##########################################################
+
+# Note: this process could take a couple of minutes
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+
+library(tidyverse)
+library(caret)
+library(data.table)
+
+# MovieLens 10M dataset:
+# https://grouplens.org/datasets/movielens/10m/
+# http://files.grouplens.org/datasets/movielens/ml-10m.zip
+
+dl <- tempfile()
+download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
+
+ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
+                 col.names = c("userId", "movieId", "rating", "timestamp"))
+
+movies <- str_split_fixed(readLines(unzip(dl, "ml-10M100K/movies.dat")), "\\::", 3)
+colnames(movies) <- c("movieId", "title", "genres")
+
+# if using R 3.6 or earlier:
+#movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(levels(movieId))[movieId],
+#                                           title = as.character(title),
+#                                           genres = as.character(genres))
+
+# if using R 4.0 or later:
+movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
+                                           title = as.character(title),
+                                           genres = as.character(genres))
+
+movielens <- left_join(ratings, movies, by = "movieId")
+
+# Validation set will be 10% of MovieLens data
+set.seed(1, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
+test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
+edx <- movielens[-test_index,]
+temp <- movielens[test_index,]
+
+# Make sure userId and movieId in validation set are also in edx set
+validation <- temp %>% 
+  semi_join(edx, by = "movieId") %>%
+  semi_join(edx, by = "userId")
+
+# Add rows removed from validation set back into edx set
+removed <- anti_join(temp, validation)
+edx <- rbind(edx, removed)
+
+rm(dl, ratings, movies, test_index, temp, movielens, removed)
+```
+
+
 # 2.2 Data Preparation
 The edx dataset is used for the purpose of developing and training the recommendation model. Initially, the edx set is checked for NAs. The edx set does not have NAs, hence no filling of NAs has to be conducted. Next, the data set is enriched with additional information for the model development. The feature **date** is created from the **timestamp** since we want to include a "Time Effect" in the model later on. The assumption is that the time a rating Additionally, the edx set is filtered to include only users that have at least 15 movie ratings. The rationale is provided in the model development section. This step reduces the size of the edx set to 8,999,671 rows. Finally, the prepared edx data set **edxT** is then split again into a train set (80%) (or 7,199,736 rows) and a test set (20%) (or 1,799,889 rows) to be used in the model development and parameter optimization.
+
+```{r}
+#### My Capstone Project start from here ####
+#### MovieLens Movie Recommendation Model ####
+
+# Install additional packages if not available already
+if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+
+# Load additional libraries
+library(lubridate)
+library(ggplot2)
+
+## Data Wrangling
+
+#Check if we have NAs in the edx dataset:
+sapply(edx, function(x) sum(is.na(x)))
+
+# Create additional features and prepare edx data set.
+# Assumption: The timestamp which indicates when a certain movie was rated by a certain user has an effect on the movie rating.
+# Convert timestamp to datetime and then to day to have a granular view.
+edxT <- edx %>% mutate(date = round_date(as_datetime(timestamp), unit = "day"))
+dim(edxT)
+
+# Assumption: Users that rate more often have more experience and therefore a better judgment which will reduce RMSE. Also users with more data points (ratings) will enable us to predict their preferences more accurately.
+edxT <- edxT %>% group_by(userId) %>% filter(n() >= 15) %>% ungroup()
+dim(edxT)
+
+# Split edx data into train and test set
+# Setting seed to 1 to make results reproducible with sample.kind = "Rounding" for R Version > 3.5.
+set.seed(1, sample.kind = "Rounding")
+
+# Create index to split data (80% train & 20% test)
+testIndex <- createDataPartition(y = edxT$rating, times = 1, p = 0.2, list = FALSE)
+trainSet <- edxT[-testIndex, ]
+testSet <- edxT[testIndex, ]
+
+# Make sure UserId and MovieId are existing in train and test set by applying semi_join.
+testSet <- testSet %>% 
+  semi_join(trainSet, by = "movieId") %>%
+  semi_join(trainSet, by = "userId")
+```
+
 
 # 2.3 Model Development
 The recommendation model we want to build is called **Regularized Recommendation Model with Movie, Restricted User, Time & Genre Effect**. The goal of the model is to predict a rating for a certain movie, by a certain user at a certain point in time using the MovieLens data. The model is designed such that it captures different biases or effects in the training data set to identify the **biases** or **effects** that influence the resulting rating of a user for a movie. For the model, we use a movie, user, time and genre bias. Those will be explained later in this section. For each of the selected effects, the concept of **regularization** is used to avoid overfitting. This issue arises when a model is too specific, i.e. such that it performs well on a well known data set, but rather poorly on an unknown data set. 
@@ -77,14 +179,122 @@ First, the average movie rating is calculated. Then, we want to capture certain 
 
 * **Genre Effect:** This parameter captures the effect the genre of the movie has on the rating, while adjusting for the movie, user, and time effect ans regularizing it.
 
-```{r optresults}
-ggplot(optResults, aes(lambda, rmse)) + geom_point()
+```{r}
+lambdas <- seq(4.5, 5.5, 0.1)
+
+# Training & evaluation of the model using the train & test set. 
+# The goal of the model is to capture the different biases or effects that have influence on a user rating.
+# The biases / effects are calculated based on selected features from the data set and determined in relation to e.g. the movie rating, overall average and other effects (see below).
+# The bias is then regularized to account for overfitting.
+# The model is evaluated using the Root Mean Squared Error (RMSE) (with removal of NAs due to robustness, NAs are replaced at a later step). 
+RMSE <- function(true, predicted){
+  sqrt(mean((true - predicted)^2, na.rm = TRUE))
+}
+
+# Training and Parameter Optimization
+rmses <- sapply(lambdas, function(l){
+  avg <- mean(trainSet$rating) # Feature Composition: Overall average rating: avg.
+  movie_avg <- trainSet %>% # Feature Composition: Movie average for filling NAs later on.
+    group_by(movieId) %>%
+    summarize(movie_avg = mean(rating)) 
+  b_movie <- trainSet %>% # Feature Composition: Regularized Movie bias: b_movie.
+    group_by(movieId) %>%
+    summarize(b_movie = sum(rating - avg)/(n()+l))
+  b_user <- trainSet %>% # Feature Composition: Regularized User bias: b_user.
+    left_join(b_movie, by="movieId") %>%
+    group_by(userId) %>%
+    summarize(b_user = sum(rating - avg - b_movie)/(n()+l))
+  b_time <- trainSet %>% # Feature Composition: Regularized Time bias: b_time.
+    left_join(b_movie, by='movieId') %>%
+    left_join(b_user, by='userId') %>% 
+    group_by(date) %>% 
+    summarize(b_time = sum(rating - avg - b_movie - b_user)/(n()+l))
+  b_genre <- trainSet %>% # Feature Composition: Regularized Genre bias: b_genre.
+    left_join(b_movie, by='movieId') %>%
+    left_join(b_user, by='userId') %>%
+    left_join(b_time, by='date') %>%
+    group_by(genres) %>%
+    summarize(b_genre = sum(rating - avg - b_movie - b_user - b_time)/(n()+l))
+  predicted_ratings <- testSet %>% # Perform prediction based on feature composition.
+    left_join(movie_avg, by = "movieId") %>% # Left join of the created biases and features on the test set.
+    left_join(b_movie, by = "movieId") %>%
+    left_join(b_user, by = "userId") %>%
+    left_join(b_time, by = "date") %>%
+    left_join(b_genre, by = "genres") %>%
+    mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>% # Perform prediction based on feature composition.
+    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # 1. Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no prediction available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available too.
+    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # 2. Replace remaining NAs with overall average.
+    mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>% # Computed predictions are numerical and can be out of the "allowed" rating range from 0.5 to 5.0. To avoid penalties in the RMSE, we trim these values to the nearest allowed rating.
+    .$pred
+  return(RMSE(predicted_ratings, testSet$rating))
+})
+```
+
+We run the model using the train set, and search for the optimal parameter lambda by evaluating the RMSE using the test set. The following figure shows the outcome for the search:
+
+```{r}
+# Plot the rmses and the lambdas
+optResults <- data.frame(lambda = lambdas, rmse = rmses)
+optResults %>% ggplot(aes(lambda, rmse)) + 
+  geom_point() + 
+  geom_smooth() +
+  geom_vline(xintercept = lambdas[which.min(rmses)], color = "red")
+#qplot(lambdas, rmses) 
+
+# Find optimal penalty parameter lambda where the RMSE is minimized.
+lambda <- lambdas[which.min(rmses)]
+
+# Print optimal lambda
+lambda
+```
+
+We have identified the optimal penalty parameter to be 4.8. We can run the model one more time with the optimal parameter.
+
+```{r}
+# Perform evaluation on test & train set with optimal lambda only.
+rmse <- sapply(lambda, function(l){
+  avg <- mean(trainSet$rating) # Feature Composition: Overall average rating: avg.
+  movie_avg <- trainSet %>% # Feature Composition: Movie average for filling NAs later on.
+    group_by(movieId) %>%
+    summarize(movie_avg = mean(rating)) 
+  b_movie <- trainSet %>% # Feature Composition: Regularized Movie bias: b_movie.
+    group_by(movieId) %>%
+    summarize(b_movie = sum(rating - avg)/(n()+l))
+  b_user <- trainSet %>% # Feature Composition: Regularized User bias: b_user.
+    left_join(b_movie, by="movieId") %>%
+    group_by(userId) %>%
+    summarize(b_user = sum(rating - avg - b_movie)/(n()+l))
+  b_time <- trainSet %>% # Feature Composition: Regularized Time bias: b_time.
+    left_join(b_movie, by='movieId') %>%
+    left_join(b_user, by='userId') %>% 
+    group_by(date) %>% 
+    summarize(b_time = sum(rating - avg - b_movie - b_user)/(n()+l))
+  b_genre <- trainSet %>% # Feature Composition: Regularized Genre bias: b_genre.
+    left_join(b_movie, by='movieId') %>%
+    left_join(b_user, by='userId') %>%
+    left_join(b_time, by='date') %>%
+    group_by(genres) %>%
+    summarize(b_genre = sum(rating - avg - b_movie - b_user - b_time)/(n()+l))
+  predicted_ratings <- testSet %>% # Perform prediction based on feature composition.
+    left_join(movie_avg, by = "movieId") %>% # Left join of the created biases and features to the test set.
+    left_join(b_movie, by = "movieId") %>%
+    left_join(b_user, by = "userId") %>%
+    left_join(b_time, by = "date") %>%
+    left_join(b_genre, by = "genres") %>%
+    mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>% # Perform prediction based on feature composition.
+    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>% # 1. Replace NAs with movie average. Rationale: Due to our data restrictions in the data wrangling part (only users with > 15 ratings) and selected biases (esp. time and genre), some NAs are still present in the results since there is no value available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. movie average (more precise) or 2. with the overall average in case the movie average is not available too.
+    mutate(pred = ifelse(is.na(pred), avg, pred)) %>% # 2. Replace remaining NAs with overall average.
+    mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>% # Computed predictions are numerical and can be out of the "allowed" rating range from 0.5 to 5.0. To avoid penalties in the RMSE, we trim these values to the nearest allowed rating.
+    .$pred
+  return(RMSE(predicted_ratings, testSet$rating))
+})
+
+# Print RMSE from train & test set.
+rmse
 ```
 
 # 2.3 Model Evaluation
-To find the optimal lambda, the modeling process is repeated 100 times. From own experimenting and to avoid you having to let your computer run for several hours, I have narrowed the lambda range to 4.9 to 5.15 (as opposed to 1 to 10 in 0.01 steps). Of course, If you want to verify the optimal lambda, you can run the code with the full lambda range. But be warned that it will take a very long time.
 
-Since our applied data restrictions, especially the restriction to users who have at least 50 ratings, some NAs are produced. Those NAs are replaced by the overall average mu to fill the blanks.
 
 # 3. Results
 ## Results section

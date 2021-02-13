@@ -94,12 +94,6 @@ testSet <- testSet %>%
   semi_join(trainSet, by = "movieId") %>%
   semi_join(trainSet, by = "userId")
 
-# Define function to compute Root Mean Squared Error (RMSE) (with removal of NAs due to robustness, NAs are replaced at a later step). 
-# Based on true outcome and the prediction.
-RMSE <- function(true, predicted){
-  sqrt(mean((true - predicted)^2, na.rm = TRUE))
-}
-
 ## Modeling
 
 # Name: Regularized Model with Movie, Restricted User, Time & Genre Effect.
@@ -115,6 +109,12 @@ lambdas <- seq(4.5, 5.5, 0.1)
 # The goal of the model is to capture the different biases or effects that have influence on a user rating.
 # The biases / effects are calculated based on selected features from the data set and determined in relation to e.g. the movie rating, overall average and other effects (see below).
 # The bias is then regularized to account for overfitting.
+# The model is evaluated using the Root Mean Squared Error (RMSE) (with removal of NAs due to robustness, NAs are replaced at a later step). 
+RMSE <- function(true, predicted){
+  sqrt(mean((true - predicted)^2, na.rm = TRUE))
+}
+
+# Training and Parameter Optimization
 rmses <- sapply(lambdas, function(l){
   avg <- mean(trainSet$rating) # Feature Composition: Overall average rating: avg.
   movie_avg <- trainSet %>% # Feature Composition: Movie average for filling NAs later on.
@@ -153,12 +153,11 @@ rmses <- sapply(lambdas, function(l){
 })
 
 # Plot the rmses and the lambdas
-optResults <- data.frame(lambda = lambdas, rmse = rmses) %>% 
-  ggplot(aes(lambda, rmse)) + 
+optResults <- data.frame(lambda = lambdas, rmse = rmses)
+optResults %>% ggplot(aes(lambda, rmse)) + 
   geom_point() + 
   geom_smooth() +
   geom_vline(xintercept = lambdas[which.min(rmses)], color = "red")
-optResults
 #qplot(lambdas, rmses) 
 
 # Find optimal penalty parameter lambda where the RMSE is minimized.
