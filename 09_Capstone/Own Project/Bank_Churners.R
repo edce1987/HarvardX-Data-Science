@@ -13,10 +13,6 @@
 # customers with information about their age, salary, marital_status, credit 
 # card limit, credit card category, etc. In total there are 23 variables.
 
-# Limitations: Since the dataset has approximately 16.07% of customers who 
-# churned, it might be difficult to train a model that reliably predicts 
-# churning customers.
-
 # Source:
 # https://www.kaggle.com/sakshigoyal7/credit-card-customers/
 
@@ -36,7 +32,7 @@ library(rpart)
 library(DataExplorer)
 library(data.table)
 
-# To my knowledge, a direct download from Kaggle is not possible.
+# To my knowledge, a direct download from Kaggle is not easily possible.
 # There is however a workaround using your Kaggle login name and password but 
 # we will chose a more straightforward way here.
 # For the sake of simplicity, let us follow these steps:
@@ -213,7 +209,7 @@ print(accuracies)
 
 # The models have very high accuracies, the bank manager would be happy to 
 # see the results. When looking at the numbers, we see that the "AdaBoost" 
-# model has the highest accuracy.
+# model has the highest accuracy with 0.9708786.
 print(accuracies[which.max(accuracies)])
 
 # Let us now look at the F_measures for the used models.
@@ -222,7 +218,7 @@ f_measures <- sapply(predictions[,-1], function(x) {
 })
 print(f_measures)
 
-# The "AdaBoost" model also has the highest F-measure.
+# The "AdaBoost" model also has the highest F-measure with 0.904376.
 print(f_measures[which.max(f_measures)])
 
 # As of now, it looks like the AdaBoost model is the best model to choose.
@@ -245,6 +241,7 @@ View(votes)
 predEnsemble <- as.factor(ifelse(votes > 0.5, "Attrited Customer", "Existing Customer"))
 
 # Evaluation of the ensemble model using accuracy and F-measure.
+# The accuracy is 0.9259625, the F-measure is 0.7137405.
 accuracyEnsemble <- confusionMatrix(data=predEnsemble, reference=test_set$Attrition_Flag)$overall["Accuracy"]
 print(accuracyEnsemble)
 
@@ -254,25 +251,46 @@ print(fMeasureEnsemble)
 # Evaluation of Ensemble Model
 # Although the ensemble model performs also quite well, it is not better than 
 # the "AdaBoost" model alone. Hence, we will select the "AdaBoost" model as our 
-# final model. Let us take a closer look into the model to see what else we can 
-# find out. We could also apply a finer / larger tuning grid to optimize our 
-# model, however this would most probably result in overfitting the model, and
-# depending on the hardware, would take a very very long time.
-# fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = seq(200, 500, 50), method = "Adaboost.M1"), data = train_set)
+# final model. 
 
-# Hence, let usfocus on the variable importance to see if we can gather more 
-# insights that could be helpful to the bank manager.
-fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, data = train_set)
+
+## Model - Optimization
+# Let us take a closer look into the "AdaBoost" model to see what else we can 
+# find out. We will apply a slightly larger tuning grid to see if we can improve 
+# our model further. However we should avoid optimizing it too much since this 
+# would result in overfitting the model, and depending on the hardware, would 
+# take a very very long time.
+# Attention: This step will take extremely long (~4-5 hours) depending on your
+# machine. Feel free to run it, otherwise please skip this line of code..
+fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = seq(0, 500, 50), method = "Adaboost.M1"), data = train_set)
+
+# If you want so skip the optimization part, please run the following code. It
+# will also take some time, but significantly less then the previous one.
+#fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, data = train_set)
 
 # Inspect the final model parameters.
+# We see the optimal model parameters, e.g. nIter = 450 and method = "Adaboost.M1"
+# for the optimized model. It means, the model uses 450 trees to decide whether
+# a customer is going to churn or not.
 fitAdaboost
 ggplot(fitAdaboost)
 fitAdaboost$bestTune
 fitAdaboost$finalModel
 
-# We can also check the variable importance to see which variables have the 
-# largest explanatory power. This information can be useful to identify and 
-# prioritize potentially churning customers.
+# Now We quickly check how the optimized model performs in terms of accuracy 
+# and F-measure. Therefore we compute the same metrics as before.
+predAdaboost <- predict(fitAdaboost, test_set)
+confusionMatrix(data=predAdaboost, reference=test_set$Attrition_Flag)$overall["Accuracy"]
+F_meas(data=predAdaboost, reference=test_set$Attrition_Flag)
+
+# Indeed, the optimized AdaBoost model has improved further. The optimized model
+# has an accuracy 0.9713722 vs. 0.9708786 (w/o optimization). The F-measure 
+# after optimization is 0.9061489 vs 0.904376 (w/o optimization). 
+
+# Next, we check the variable importance to gather further insights and to see 
+# which variables in the data set have the highest explanatory power. This 
+# information can be very valuable and useful to identify potentially churning 
+# customers at an early stage and to initiate early countermeasures.
 varImp(fitAdaboost)
 
 # From this, we see the most important variables in the data set to predict
@@ -285,20 +303,20 @@ varImp(fitAdaboost)
 
 ## Summary and Limitations
 # From our evaluation results, we see that the "Adaboost" model has the highest 
-# accuracy (~0,971) and the highest F-measure (~0.904). It means, the "AdaBoost" 
-# model correctly predicted 97% of the "Attrited Customers". Even after using
+# accuracy and the highest F-measure. It means, the "AdaBoost" model correctly 
+# predicted approximately 97% of the "Attrited Customers". Even after using
 # the F-measure, which is a more balanced metric, we see that the "AdaBoost"
-# model is still superior to the other models for the dataset at hand.
+# model is still superior to the other selected models for the dataset at hand.
 # For the "Bank Churners" use case we have, our insights can be very useful
 # for the bank manager. He could use the model to predict which customer is 
-# likely to churn , and hence proactively contacts the customer to offer an
+# likely to churn, and hence proactively contact the customer to offer an
 # extended service or special credit card conditions.
 
 # Limitations
-# Since the underlying data set only has a relatively small prevalence of 16% 
+# Since the underlying data set only has a relatively small prevalence of ~16% 
 # of "Attrited Customers", it may not be solid and reliable enough to have 
 # very robust predictions of churning customers. Hence, one way to improve or
 # to stabilize the model would be gather more data at the bank itsel, or to buy 
-# additional data from external data providers.
-# Nonetheless, the "AdaBoost" model performs very well with the available data 
-# set and serve as a basis for further development.
+# additional data from external data providers. Nonetheless, the "AdaBoost" 
+# model performs very well with the available dataset and serve as a basis for 
+# further development.
