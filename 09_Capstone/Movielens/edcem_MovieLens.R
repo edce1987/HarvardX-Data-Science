@@ -38,7 +38,7 @@ movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
 movielens <- left_join(ratings, movies, by = "movieId")
 
 # Validation set will be 10% of MovieLens data
-set.seed(1, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
+set.seed(1, sample.kind="Rounding") # if using R 3.5 or earlier, use set.seed(1)
 test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
 edx <- movielens[-test_index,]
 temp <- movielens[test_index,]
@@ -68,20 +68,24 @@ library(ggplot2)
 ## Data Wrangling
 
 #Check if we have NAs in the edx dataset:
-sapply(edx, function(x) sum(is.na(x)))
+print(sapply(edx, function(x) sum(is.na(x))))
 
 # Create additional features and prepare edx data set.
-# Assumption: The timestamp which indicates when a certain movie was rated by a certain user has an effect on the movie rating.
+# Assumption: The timestamp which indicates when a certain movie was rated by a 
+# certain user has an effect on the movie rating.
 # Convert timestamp to datetime and then to day to have a granular view.
 edxT <- edx %>% mutate(date = round_date(as_datetime(timestamp), unit = "day"))
 dim(edxT)
 
-# Assumption: Users that rate more often have more experience and therefore a better judgment which will reduce RMSE. Also users with more data points (ratings) will enable us to predict their preferences more accurately.
+# Assumption: Users that rate more often have more experience and therefore a 
+# better judgment which will reduce RMSE. Also users with more data points 
+# (ratings) will enable us to predict their preferences more accurately.
 edxT <- edxT %>% group_by(userId) %>% filter(n() >= 15) %>% ungroup()
 dim(edxT)
 
 # Split edx data into train and test set
-# Setting seed to 1 to make results reproducible with sample.kind = "Rounding" for R Version > 3.5.
+# Setting seed to 1 to make results reproducible with sample.kind = "Rounding" 
+# for R Version > 3.5.
 set.seed(1, sample.kind = "Rounding")
 
 # Create index to split data (80% train & 20% test)
@@ -89,7 +93,8 @@ testIndex <- createDataPartition(y = edxT$rating, times = 1, p = 0.2, list = FAL
 trainSet <- edxT[-testIndex, ]
 testSet <- edxT[testIndex, ]
 
-# Make sure UserId and MovieId are existing in train and test set by applying semi_join.
+# Make sure UserId and MovieId are existing in train and test set by applying 
+# semi_join.
 testSet <- testSet %>% 
   semi_join(trainSet, by = "movieId") %>%
   semi_join(trainSet, by = "userId")
@@ -97,19 +102,27 @@ testSet <- testSet %>%
 ## Modeling
 
 # Name: Regularized Model with Movie, Restricted User, Time & Genre Effect.
-# We want to capture different "biases" in the training data set to identify the effects / biases that influence the resulting rating. 
-# We want to use a regularized model to avoid the problem of overfitting. 
-# Hence, we need to find the optimal "penalty parameter" lambda for the regularized model. I have narrowed the range of the optimal parameter to avoid excessive computing time. 
-# From my trials I narrowed down the optimal area somewhere between 4.5 to 5.5 in 0.1 steps which equals 10 iterations.
-# We could also conduct a finer penalty parameter search, e.g. 1 to 10 in 0,001 steps to optimize our algorithm.
-# However this would most probably result in overfitting, hence we stick to the selected sequence.
+# We want to capture different "biases" in the training data set to identify the 
+# effects / biases that influence the resulting rating. We want to use a 
+# regularized model to avoid the problem of overfitting. Hence, we need to find 
+# the optimal "penalty parameter" lambda for the regularized model. I have 
+# narrowed the range of the optimal parameter to avoid excessive computing time. 
+# From my trials I narrowed down the optimal area somewhere between 4.5 to 5.5 
+# in 0.1 steps which equals 10 iterations.We could also conduct a finer penalty 
+# parameter search, e.g. 1 to 10 in 0,001 steps to optimize our algorithm.
+# However this would most probably result in overfitting, hence we stick to the 
+# selected sequence.
 lambdas <- seq(4.5, 5.5, 0.1)
 
 # Training & evaluation of the model using the train & test set. 
-# The goal of the model is to capture the different biases or effects that have influence on a user rating.
-# The biases / effects are calculated based on selected features from the data set and determined in relation to e.g. the movie rating, overall average and other effects (see below).
-# The bias is then regularized to account for overfitting.
-# The model is evaluated using the Root Mean Squared Error (RMSE) (with removal of NAs due to robustness, NAs are replaced at a later step). 
+# The goal of the model is to capture the different biases or effects that have 
+# influence on a user rating. The biases / effects are calculated based on 
+# selected features from the data set and determined in relation to e.g. the 
+# movie rating, overall average and other effects (see below). The bias is then 
+# regularized to account for overfitting.
+
+# The model is evaluated using the Root Mean Squared Error (RMSE) (with removal 
+# of NAs due to robustness, NAs are replaced at a later step). 
 RMSE <- function(true, predicted){
   sqrt(mean((true - predicted)^2, na.rm = TRUE))
 }
@@ -154,20 +167,22 @@ rmses <- sapply(lambdas, function(l){
 
 # Plot the rmses and the lambdas
 optResults <- data.frame(lambda = lambdas, rmse = rmses)
-optResults %>% ggplot(aes(lambda, rmse)) + 
+print(optResults %>% ggplot(aes(lambda, rmse)) +
+  ggtitle("RMSE-minimizing lambda") +
   geom_point() + 
   geom_smooth() +
-  geom_vline(xintercept = lambdas[which.min(rmses)], color = "red")
+  geom_vline(xintercept = lambdas[which.min(rmses)], color = "red"))
+  
 #qplot(lambdas, rmses) 
 
 # Find optimal penalty parameter lambda where the RMSE is minimized.
 lambda <- lambdas[which.min(rmses)]
 
 # Print optimal lambda
-lambda
+print(lambda)
 
 # Perform evaluation on test & train set with optimal lambda only.
-rmse <- sapply(lambda, function(l){
+trainingRmse <- sapply(lambda, function(l){
   avg <- mean(trainSet$rating) # Feature Composition: Overall average rating: avg.
   movie_avg <- trainSet %>% # Feature Composition: Movie average for filling NAs later on.
     group_by(movieId) %>%
@@ -205,10 +220,10 @@ rmse <- sapply(lambda, function(l){
 })
 
 # Print RMSE from train & test set.
-rmse
+print(trainingRmse)
 
-#### Final prediction of ratings using the validation set.                ####
-#### Model name: Regularized Model with Movie, Restricted User, Time & Genre Effect. ####
+#### Final prediction of ratings using the validation set.                            ####
+#### Model name: Regularized Model with Movie, Restricted User, Time & Genre Effect.  ####
 finalRmse <- sapply(lambda, function(l){
   avg <- mean(trainSet$rating) # Feature Composition: Overall average rating avg.
   movie_avg <- trainSet %>%
@@ -248,4 +263,4 @@ finalRmse <- sapply(lambda, function(l){
 })
 
 # Print final RMSE.
-finalRmse
+print(finalRmse)
