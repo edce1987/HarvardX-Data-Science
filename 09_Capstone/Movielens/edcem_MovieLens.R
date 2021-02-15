@@ -54,7 +54,7 @@ edx <- rbind(edx, removed)
 
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
-#### My Capstone Project start from here ####
+#### My Capstone Project starts from here ####
 #### MovieLens Movie Recommendation Model ####
 
 # Install additional packages if not available already
@@ -172,8 +172,6 @@ print(optResults %>% ggplot(aes(lambda, rmse)) +
   geom_point() + 
   geom_smooth() +
   geom_vline(xintercept = lambdas[which.min(rmses)], color = "red"))
-  
-#qplot(lambdas, rmses) 
 
 # Find optimal penalty parameter lambda where the RMSE is minimized.
 lambda <- lambdas[which.min(rmses)]

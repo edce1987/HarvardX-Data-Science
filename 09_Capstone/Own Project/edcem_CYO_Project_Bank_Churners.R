@@ -42,7 +42,7 @@ library(data.table)
 
 # Source: https://www.kaggle.com/sakshigoyal7/credit-card-customers/download
 
-# Use the following code to get or set your wd accordingly.
+# Use the following code to get or set your working directory accordingly.
 getwd()
 setwd("/Users/edce/projects/HarvardX-Data-Science/09_Capstone/Own Project")
 setwd("C:/Users/edin.ceman/Documents/GitHub/HarvardX-Data-Science/09_Capstone/Own Project/")
