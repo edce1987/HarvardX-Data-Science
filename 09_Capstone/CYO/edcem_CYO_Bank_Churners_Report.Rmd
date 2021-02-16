@@ -2,7 +2,7 @@
 title: "Report on the Prediction of Bank Churners"
 subtitle: "Data Science: Capstone - Choose Your Own Project"
 author: "by Edin Ceman"
-date: "15th February 2021"
+date: "17th February 2021"
 output: 
   pdf_document:
     latex_engine: xelatex
@@ -203,7 +203,7 @@ In this section the selected models will be evaluated by computing a **confusion
 
 We will use multiple metrics to evaluate our models to get a clearer and more diversified picture of the models' performances. We will use the **Accuracy** and the **F-measure** to determine the performance of our models. The *Accuracy* is the number of correct predictions in relation to the total predictions made. It is one of the most common performance measures. 
 
-Furthermore, we will use the **F1 score** or **F-measure**. It is a number between 0 and 1 and it is the harmonic mean of **Precision** and **Recall**, i.e. it balances *Precision* and *Recall*. *Precision* (or Pos. Pred. Value) is the share of correct positive predictions (true Positives) in relation to the total positive predictions (true positives + false positives). *Recall* (or Specificity) is the share of correct positive predictions (true positives) in relation to the total positives (true Positives + false Negatives). The *F-measure* is also a very common measure to evaluate classification models [^5]. 
+Furthermore, we will use the **F1 score** or **F-measure**. It is a number between 0 and 1 and it is the harmonic mean of **Precision** and **Recall**, i.e. it balances *Precision* and *Recall*. *Precision* (or Pos. Pred. Value) is the share of correct positive predictions (true Positives) in relation to the total positive predictions (true positives + false positives). *Recall* (or Specificity) is the share of correct positive predictions (true positives) in relation to the total positives (true positives + false negatives). The *F-measure* is also a very common measure to evaluate classification models [^5]. 
 
 [^5]: Further information: https://towardsdatascience.com/the-5-classification-evaluation-metrics-you-must-know-aa97784ff226
 
@@ -274,7 +274,7 @@ Once the optimization is completed, we can inspect the final model parameters. F
 fitAdaboost
 ```
 
-Now, wen can quickly check how the optimized *AdaBoost* model performs in terms of *Accuracy* and *F-measure*. Therefore we compute the same metrics as before.
+Now, we can quickly check how the optimized *AdaBoost* model performs in terms of *Accuracy* and *F-measure*. Therefore we compute the same metrics as before.
 
 ```{r, message = FALSE}
 predAdaboost <- predict(fitAdaboost, test_set)
