@@ -16,39 +16,51 @@
 # Source:
 # https://www.kaggle.com/sakshigoyal7/credit-card-customers/
 
-# Install required packages.
+# Install & load required packages.
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
 if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
 if(!require(DataExplorer)) install.packages("DataExplorer", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(curl)) install.packages("curl", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 
-# Load required libraries.
-library(tidyverse)
-library(caret)
-library(Rborist)
-library(rpart)
-library(DataExplorer)
-library(data.table)
 
-# To my knowledge, a direct download from Kaggle is not easily possible.
-# There is however a workaround using your Kaggle login name and password but 
-# we will chose a more straightforward way here.
-# For the sake of simplicity, let us follow these steps:
-# 1. Download the file using below link. It should be named as "archive.zip".
-# 2. Save the downloaded "archive.zip" into your working directory. This is 
-# important, otherwise it will not work.
+## Data Initiation (Main solution)
+# There are different ways to access the necessary data set.
+# I figured out that the most convenient way is by using the package "curl" and
+# to download the *.csv file directly from my public GitHub account. Should you 
+# experience any issues with that please consider the alternative ways shown below.
+data <- read.csv(curl("https://raw.githubusercontent.com/edce1987/edx_edcem_CYO/main/BankChurners.csv"), header = TRUE, stringsAsFactors =  TRUE)
 
-# Source: https://www.kaggle.com/sakshigoyal7/credit-card-customers/download
+# From the above Kaggle link, from the author we receive the information that 
+# the variables "Naive_Bayes_Classifier...._1",  "Naive_Bayes_Classifier...._2" 
+# should be removed from the dataset.  
+data_clean <- data %>% select(-Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1 & -Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2)
+
+# Inspect data.
+# Please note that all strings are directly converted to factors.
+str(data_clean)
+
+#### You can skip this part and continue with "Data Exploration" directly.
+
+## Data Initiation (Alternative solution)
+
+# To my knowledge, a direct download from Kaggle is not easily possible with R.
+# There seems to be a workaround using your Kaggle login name and password but 
+# we will chose a more straightforward way here. For the sake of simplicity, 
+# let us follow these steps:
+# 1. Download the file using below Source link. It might be necessary to login
+# into your Kaggle account first. The downloaded file is named "archive.zip".
+# 2. Save the downloaded "archive.zip" into your working directory. This step 
+# is important, otherwise it will not work.
 
 # Use the following code to get or set your working directory accordingly.
-getwd()
-setwd("/Users/edce/projects/HarvardX-Data-Science/09_Capstone/Own Project")
-setwd("C:/Users/edin.ceman/Documents/GitHub/HarvardX-Data-Science/09_Capstone/Own Project/")
+#getwd("")
+#setwd("")
 
-
-## Data Input
+# Source: https://www.kaggle.com/sakshigoyal7/credit-card-customers/download
 
 # Unzip, extract and read the data from archive.zip.
 # The archive contains a csv-file with a header and strings. Hence, header is 
@@ -56,34 +68,13 @@ setwd("C:/Users/edin.ceman/Documents/GitHub/HarvardX-Data-Science/09_Capstone/Ow
 # following code with read.csv(...) on a MacBook, the data was not imported 
 # correctly (only 9,857 rows). The correct import of the dataset should have a 
 # header and 10.127 rows.
-data <- read.csv(unz("archive.zip", filename = "BankChurners.csv"), header = TRUE, stringsAsFactors = TRUE)
+#data <- read.csv(unz("archive.zip", filename = "BankChurners.csv"), header = TRUE, stringsAsFactors = TRUE)
 # If you experience above mentioned error, please use the following code that 
 # uses fread(...) instead.
-data <- fread(cmd = 'unzip -cq archive.zip', header = TRUE, stringsAsFactors = TRUE)
-
-# Inspect if conversion was done correctly.
-str(data)
+#data <- fread(cmd = 'unzip -cq archive.zip', header = TRUE, stringsAsFactors = TRUE)
 
 
 ## Data Exploration
-
-# To quickly explore the dataset, we use the package "DataExplorer" which is a 
-# very useful package to quickly generate a report that gives you a detailed 
-# insight into your dataset.
-DataExplorer::create_report(data)
-
-# From the generated report (html) we receive a broad range of information. 
-# Among others, we get basic statistics of our data set, i.e. number of rows, 
-# columns etc. We also get information on the data structure, i.e. we see the 
-# available variables in the data set. We also see that there are no missing 
-# data points or NAs in the columns, so we don't have to fill them later on. 
-# We see that our target variable "Attrition_Flag" (the indicator whether a
-# customer has churned) is discrete / a factor. We see that we have 26% 
-# discrete columns and 74% numeric columns in our data set. We see the 
-# distributions and QQ-Plots of the underlying data - some are approximately 
-# normally distributed, while others are not. Hence, we should avoid models 
-# that strictly assume normality of the data. We also see a correlation analysis 
-# of the variables and principal component analysis.
 
 # To give you a better insight into the data, I have listed the included
 # variables and a description of the name, type and meaning. All the information
@@ -112,26 +103,57 @@ DataExplorer::create_report(data)
 # Total_Ct_Chng_Q4_Q1 (num) -> change in transaction count (Q4 over Q1).
 # Avg_Utilization_Ratio (num) -> average card utilization ratio.
 
+# To quickly explore the dataset in more detail, we could simply use the package 
+# "DataExplorer" which is a very powerful package to quickly generate a report 
+# that gives you a detailed insight into your dataset.
+DataExplorer::create_report(data_clean)
 
-## Data Cleaning
+# From the generated report (html) we receive a broad range of information. 
+# Among others, we get basic statistics of our data set, i.e. number of rows, 
+# columns etc. We also get information on the data structure, i.e. we see the 
+# available variables in the data set. We also see that there are no missing 
+# data points or NAs in the columns, so we don't have to fill them later on. 
+# We see that our target variable "Attrition_Flag" (the indicator whether a
+# customer has churned) is discrete / a factor. We see that we have 26% 
+# discrete columns and 74% numeric columns in our data set. We see the 
+# distributions and QQ-Plots of the underlying data - some are approximately 
+# normally distributed, while others are not. Hence, we should avoid models 
+# that strictly assume normality of the data. We also see a correlation analysis 
+# of the variables and principal component analysis.
 
-# From the above Kaggle link, from the author we receive the information that 
-# the variables "Naive_Bayes_Classifier...._1",  "Naive_Bayes_Classifier...._2" 
-# should be removed from the dataset.  
-data_clean <- data %>% select(-Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1 & -Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2)
-str(data_clean)
+# However, since it would be strange to have a report generated in a report, 
+# let us perform some of the data exploration steps manually.
 
+# Plot basic data insights.
+plot_intro(data_clean, title = "Data Exploration: Basics")
 
-## Model: Preparation
+# Plot for missing values.
+plot_missing(data_clean, title = "Data Exploration: Missing Values")
+
+# Plot histogram.
+plot_histogram(data_clean, title = "Data Exploration - Histogram")
+
+# Plot bar diagram
+plot_bar(data_clean, title = "Data Exploration - Exemplary Variable Characteristics")
+
+## Data Preparation
+#Inspect dataset
+View(data_clean)
+
+# It makes sense to remove the variable *CLIENTNUM* which is a unique ID for each customer. Since this is a randomly assigned and unique ID, it is plausible to expect that is has no explanatory power. Since no e.g. *joins* are performed later on, we also do not need it for mapping purposes. Also, we want to avoid causing a potential interference for the models. Hence, we remove the *CLIENTNUM* from the data set.
+data_prepared <- data_clean %>% select(-CLIENTNUM)
+
+# Remove obsolete sets
+rm(data, data_clean)
 
 # Create train set (80%) and test set (20%). 
 set.seed(1, sample.kind="Rounding") # if using R 3.5 or earlier, use set.seed(1)
-test_index <- createDataPartition(data_clean$Attrition_Flag, times = 1, p = 0.2, list = FALSE)
-train_set <- data_clean[-test_index,]
-test_set <- data_clean[test_index,]
+test_index <- createDataPartition(data_prepared$Attrition_Flag, times = 1, p = 0.2, list = FALSE)
+train_set <- data_prepared[-test_index,]
+test_set <- data_prepared[test_index,]
 
 
-## Model: Selection
+## Model Design
 
 # We want to predict potentially churning customers which is indicated by the 
 # variable "Attrition_Flag". It is a discrete or factor variable.
@@ -145,9 +167,6 @@ View(mod)
 # We select a set of suitable models and store them into the "models" variable.
 models <- c("adaboost", "bayesglm", "knn", "naive_bayes", "nnet", "Rborist", "rf", "rpart", "svmLinear", "svmPoly")
 
-
-## Model: Design, Training & Prediction
-
 # We use 10-fold cross validation to account for overfitting and selection bias.
 set.seed(1, sample.kind="Rounding")
 control <- trainControl(method = "cv", number = 10, p = .8)
@@ -156,7 +175,6 @@ control <- trainControl(method = "cv", number = 10, p = .8)
 # predictions are made as part of an sapply statement. Finally, we will
 # evaluate the results using different performance metrics.
 # Attention: This takes several minutes or an hour depending on your hardware.
-
 
 # Model Training & Prediction
 set.seed(1, sample.kind="Rounding")
@@ -167,15 +185,14 @@ predictions <- sapply(models, function(model) {
   data.frame(model = prediction)
 })
 
-# Transform predictions into data frame and add client IDs
+# Transform predictions into data frame
 predictions <- as.data.frame(predictions)
-predictions <- data.frame(clientID = test_set$CLIENTNUM, predictions)
 
 # Inspect predictions
 View(predictions)
 
 
-## Model: Evaluation
+## Model Evaluation
 # We evaluate the predictions and compute a confusion matrix for each model.
 # The confusion matrix is a table that describes the performance of a 
 # classification model with certain figures. From it you can derive several 
@@ -202,23 +219,23 @@ View(predictions)
 # Source: https://towardsdatascience.com/the-5-classification-evaluation-metrics-you-must-know-aa97784ff226
 
 # We compute the accuracy for the used models.
-accuracies <- sapply(predictions[,-1], function(x) {
+accuracies <- sapply(predictions, function(x) {
   confusionMatrix(data=x, reference=test_set$Attrition_Flag)$overall["Accuracy"]
 })
 print(accuracies)
 
 # The models have very high accuracies, the bank manager would be happy to 
 # see the results. When looking at the numbers, we see that the "AdaBoost" 
-# model has the highest accuracy with 0.9708786.
+# model has the highest accuracy with 0.9693978.
 print(accuracies[which.max(accuracies)])
 
 # Let us now look at the F_measures for the used models.
-f_measures <- sapply(predictions[,-1], function(x) {
+f_measures <- sapply(predictions, function(x) {
   F_meas(data=x, reference=test_set$Attrition_Flag)
 })
 print(f_measures)
 
-# The "AdaBoost" model also has the highest F-measure with 0.904376.
+# The "AdaBoost" model also has the highest F-measure with 0.9012739.
 print(f_measures[which.max(f_measures)])
 
 # As of now, it looks like the AdaBoost model is the best model to choose.
@@ -241,7 +258,7 @@ View(votes)
 predEnsemble <- as.factor(ifelse(votes > 0.5, "Attrited Customer", "Existing Customer"))
 
 # Evaluation of the ensemble model using accuracy and F-measure.
-# The accuracy is 0.9259625, the F-measure is 0.7137405.
+# The accuracy is 0.9343534, the F-measure is 0.7637655.
 accuracyEnsemble <- confusionMatrix(data=predEnsemble, reference=test_set$Attrition_Flag)$overall["Accuracy"]
 print(accuracyEnsemble)
 
@@ -260,13 +277,19 @@ print(fMeasureEnsemble)
 # our model further. However we should avoid optimizing it too much since this 
 # would result in overfitting the model, and depending on the hardware, would 
 # take a very very long time.
-# Attention: This step will take extremely long (~4-5 hours) depending on your
-# machine. Feel free to run it, otherwise please skip this line of code..
-fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = seq(0, 500, 50), method = "Adaboost.M1"), data = train_set)
 
-# If you want so skip the optimization part, please run the following code. It
-# will also take some time, but significantly less then the previous one.
-#fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, data = train_set)
+# Attention: This optimizazion step with a tuning grid from 0 to 1000 in 50' steps
+# will take very long (~15-20 hours) depending on your machine. Having a more 
+# granular parameter search e.g. from 1 to 1000 in 1 steps would take extremely 
+# long and would most probably result in overfitting. Hence, we will not do that.
+# Feel free to run it if you want, otherwise please skip this line of code.
+#fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = seq(0, 1000, 50), method = "Adaboost.M1"), data = train_set)
+
+# From my personal trials (yes I ran it few times), I found that the optimal 
+# number of trees is approximately 450 with the "Adaboost.M1" method. 
+# Knowing the optimal number of trees, we can massively accelerate the fitting
+# process, and tell R to use nIter = 450 with method = "AdaBoost.M1", i.e.:
+fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = 450, method = "Adaboost.M1"), data = train_set)
 
 # Inspect the final model parameters.
 # We see the optimal model parameters, e.g. nIter = 450 and method = "Adaboost.M1"

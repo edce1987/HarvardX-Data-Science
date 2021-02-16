@@ -1,6 +1,6 @@
 ---
-title: "Data Science: Capstone - Choose Your Own Project"
-subtitle: "Report on Prediction Model for Bank Churners"
+title: "Report on the Prediction of Bank Churners"
+subtitle: "Data Science: Capstone - Choose Your Own Project"
 author: "by Edin Ceman"
 date: "15th February 2021"
 output: 
@@ -8,309 +8,299 @@ output:
     latex_engine: xelatex
 mainfont: Calibri Light 
 ---
-
-# 1. Introduction
-The following report will give you an overview of my *Data Science: Capstone MovieLens* project. In the **Introduction** section, background information on the *MovieLens Collection* is provided. This is followed by a description of the used data set, the goal of the project and the key steps that were performed. In the **Methods & Analysis** section, the modeling approach, process and methods will be explained. The **Results** section will then present and discuss the final results of the recommendation model. Finally, the **Conclusion** section will summarize the outcomes and discuss it's limitations. Please note that for the report at hand and the depicted R code, all comments have been removed for the purpose of clarity and formatting. The commented code and further details can be found in the corresponding R script.
-
-## 1.1 The MovieLens Collection 
-The *MovieLens* dataset is a publicly available source of information containing user ratings for a large collection of movies over a defined period of time. This data was collected and made available by GroupLens Research on the web site (http://movielens.org). There are different kinds of sizes of the *MovieLens* data. While there is also a full-size version of the data set available, in this course we use the smaller "10m" version to facilitate the modeling process while also reducing the necessary computing power.
-
-## 1.2 Dataset
-The "10m" dataset from *MovieLens* is a smaller version of the full-size data set and contains 10,000,054 ratings and 95,580 tags applied to 10,681 movies by 71,567 users of the online movie recommending service *MovieLens*. From the data set, the following information are extracted as part of the *Data Science: Capstone* course:
-
-* **userId:** This is an integer representing a unique user ID. *MovieLens* users were selected at random for inclusion. Their IDs have been anonymized.
-
-* **movieId:** This is a numeric representing a unique movie ID.
-
-* **rating:** This is a numeric representing the user rating for a movie. It can display the following discrete values (0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0). 
-
-* **timestamp:** This is an integer representing the exact time when the rating for a certain movie by a certain user was made. 
-
-* **title:** This is a character value displaying the movie's full title.
-
-* **genres:** This is a character representing the genre of the movie. Movies can be in multiple genres, in this case they are all listed and separated with "|".
-
-## 1.3 Goal
-The goal is to build a movie recommendation model based on the provided *MovieLens* data set. Following that, the aim of the recommendation model is to predict a rating for a certain user and a certain movie at a certain point in time based on the information and patterns from the *MovieLens* data set. To achieve this goal, our model captures different effects or biases in the data set to identify the parameters that shape a user rating. This information can then be used to provide movie recommendations to a certain user.
-
-## 1.4 Key Steps
-To build the movie recommendation model, the following key steps were performed:
-
-* **Data Initiation:** First, the "10m MovieLens" data set is downloaded, and the relevant information is extracted, transformed and loaded into R. The downloaded data set is then split into an *edx* set (90%) for the purpose of developing, training and testing, and a final hold-out *validation* data set (10%) for the final evaluation of the recommendation model.
-
-* **Data Preparation:** Next, the *edx* data set is checked for NAs, filtered and enriched with additional features for the model design. The *edx* set is then split again into a train (80%) and a test (20%) set to develop, train and evaluate the recommendation model.
-
-* **Model Design:** In this step, the recommendation model is built using the train set, and evaluated with the test set. The model is designed such that it captures certain biases or effects in the train data. Additionally, regularization is applied to account for overfitting. The Root Mean Squared Error (RMSE) is used to evaluate the model performance and to select the optimal and final model parameters.
-
-* **Model Evaluation:** The final model is then evaluated using the final hold-out validation set and the optimized parameters. Predictions are calculated for the validation set and those are used for the final evaluation of the model performance.  
-
-* **Results:** The final model results are presented and discussed.
-
-* **Conclusion:** Lastly, the report results are summarized, and limitations as well as potential future work is discussed.
-
-# 2. Methods & Analysis
-This section explains the approach for initiating and preparing the data set as well as the designing, building and evaluation of the recommendation model. The data initiation and data preparation sections describe how the *MovieLens* data is loaded and prepared. Based on that, the section *Model Design* describes the approach, rationale and the methods used to build the recommendation model. The *Model Evaluation* section describes the evaluation and optimization process and the metrics used to determine the model performance. 
-
-## 2.1 Data Initiation
-The relevant code to download and create the *edx* and *validation* set has been kindly provided in the edx course "Data Science: Capstone". The provided code downloads the "10m MovieLens" data from source, extracts and transforms the relevant information into R. It should be noted that the **movieId** is transformed into a numeric data type, the **title** and **genres** are transformed into a character data type. This data set is then split into a set with the name *edx* and a set with the name *validation*. The *edx* set contains 90% (or 9,000,055 rows) of the 10m MovieLens data set and shall be used to build, train and optimize the recommendation model. The *validation* set contains 10% (or 999,999 rows) from the "10m" data set and represents the **final hold-out** data set that is only used in the final evaluation of the recommendation model. It is important to mention that the validation set is **not used** for the development and training of the model.
-
-```{r, message = FALSE}
+```{r, message = FALSE, echo = FALSE}
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
+if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
+if(!require(DataExplorer)) install.packages("DataExplorer", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(curl)) install.packages("curl", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+```
 
-library(tidyverse)
-library(caret)
-library(data.table)
+# 1. Introduction
+The following report will give you an overview of my *Data Science: Capstone Choose Your Own* project. In the **Introduction** section, background information on the *Bank Churners* use case is provided. This is followed by a description of the used data set, the goal of the project and the key steps that were performed. In the **Methods & Analysis** section, the modeling approach, process and methods will be explained. The **Results** section will then present and discuss the final results of the prediction model. Finally, the **Conclusion** section will summarize the outcomes and discuss it's limitations and potential future work. Please note that for the report at hand and the depicted R code, all comments have been removed for the purpose of clarity and formatting. The commented code and further details can be found in the corresponding R script.
 
-dl <- tempfile()
-download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
+## 1.1 The Bank Churners Use Case
+A manager at a bank is concerned with more and more customers leaving their credit card services (i.e. *churning*). The bank manager would like to predict which customer is going to churn next based on the underlying data that the bank has collected. The bank manager's goal is to identify likely-to-churn customers such that the bank can proactively contact the customer to provide a customized service or a special offer to prevent him from churning. The bank manager asks for your support in the creation of an appropriate model that can accomplish this task. The data set is originally from a website with the URL https://leaps.analyttica.com/home. The following context and background information is taken from the Kaggle description [^1]. I have added further information and summarized it such that it conveys the key information.
 
-ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
-                 col.names = c("userId", "movieId", "rating", "timestamp"))
+[^1]: Source: https://www.kaggle.com/sakshigoyal7/credit-card-customers. 
 
-movies <- str_split_fixed(readLines(unzip(dl, "ml-10M100K/movies.dat")), "\\::", 3)
-colnames(movies) <- c("movieId", "title", "genres")
+## 1.2 Dataset
+The *Bank Churners* data set contains 10,127 bank customers with information about e.g. their *age*, *salary*, *marital_status*, *credit card limit*, *credit card category* and many more. In total there are 23 variables in the data set. The following list gives you an overview of the variables, their data types [^2] and a brief description.
 
-movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
-                                           title = as.character(title),
-                                           genres = as.character(genres))
+[^2]: Please note that int = integer, num = numerical and factor = discrete type or factor.
 
-movielens <- left_join(ratings, movies, by = "movieId")
+* **CLIENTNUM**, (int), unique customer ID.
+* **Attrition_Flag**, (Factor w/ 2 levels "Attrited Customer"), flag if customer churned.
+* **Customer_Age**, (int), age of the customer.
+* **Gender**, (Factor w/ 2 levels "F","M"), sex of customer.
+* **Dependent_count**, (int), number of dependents.
+* **Education_Level**, (Factor w/ 7 levels "College","Doctorate"), education level of customer.
+* **Marital_Status**, (Factor w/ 4 levels "Divorced","Married"), marital status.
+* **Income_Category**, (Factor w/ 6 levels "), discrete income level e.g. $60K - $80K.
+* **Card_Category**, (Factor w/ 4 levels "Blue","Gold"), tier of credit card product.
+* **Months_on_book**, (int), period / length of relationship with bank.
+* **Total_Relationship_Count**, (int), total no. of products held by the customer.
+* **Months_Inactive_12_mon**, (int), no. of months inactive in the last 12 months.
+* **Contacts_Count_12_mon**, (int), no. of contacts in the last 12 months.
+* **Credit_Limit**, (num), credit limit on the credit card.
+* **Total_Revolving_Bal**, (int), total revolving balance on the credit card.
+* **Avg_Open_To_Buy**, (num), open to buy credit line (average of last 12 months).
+* **Total_Amt_Chng_Q4_Q1**, (num), change in transaction amount (Q4 over Q1).
+* **Total_Trans_Amt**, (int), total transaction amount (last 12 months).
+* **Total_Trans_Ct**, (int), total transaction count (last 12 months).
+* **Total_Ct_Chng_Q4_Q1**, (num), change in transaction count (Q4 over Q1).
+* **Avg_Utilization_Ratio**, (num), average card utilization ratio.
+
+## 1.3 Goal
+The goal is to build a prediction model based on the provided *Bank Churners* data set. Following that, the aim of the prediction model is to predict potentially churning bank customers, i.e. precisely the variable *Attrition_Flag*. For the use case at hand, this is a valuable information to the bank since it can use this insight to proactively initiate countermeasures in order to prevent the customer from churning. To achieve this goal, we will build a model that learns on the basis of the existing *Bank Churners* data, and thus finds patterns to identify the parameters that indicate a potential churn.
+
+## 1.4 Key Steps
+To build and evaluate the prediction model, the following key steps are performed:
+
+* **Data Initiation:** First, the *Bank Churners* data set is downloaded, and the relevant information is extracted, transformed and loaded into R. 
+
+* **Data Exploration:** Subsequently, the data set and it's data structure are explored with statistics and visual representations of important metrics. Furthermore, the data set is checked for completeness and special characteristics.
+
+* **Data Preparation:** The data set is then cleansed, and split into a *train set* (80%) for the purpose of development and training, and a hold-out *test set* (20%) for the evaluation of the prediction model.
+
+* **Model Design:** In this step, the prediction model is built using the *train set*, and evaluated with the *test set*. Multiple machine learning techniques as well as an ensemble model are considered in the model design to find the best approach for the prediction of bank churners.
+
+* **Model Evaluation:** Next, predictions are made on the *test set* by the each of the different techniques and approaches. Those are evaluated using a confusion matrix. From the confusion matrix selected parameters such as the *Accuracy* and the *F-measure* or *F-score* are considered for the evaluation of the models' performances.
+
+* **Results:** The final model results as well as further insights are presented and discussed.
+
+* **Conclusion:** The report results are summarized, and limitations as well as potential future work is discussed.
+
+# 2. Methods & Analysis
+This section explains the approach for initiating and preparing the data set as well as the designing, training and evaluation of the prediction model. The *Data Initiation*, *Data Exploration* and *Data Preparation* sections describe how the *Bank Churners* data is loaded, analyzed and prepared. Based on that, the section *Model Design* describes the approach, rationale and the methods used to build the prediction model. The *Model Evaluation* section describes the evaluation and optimization process and the metrics used to determine the model performance. 
+## 2.1 Data Initiation
+The code shown below downloads the *Bank Churners* data set from my personal *GitHub Repository*, and extracts and transforms the relevant information into an R data frame called *data*. It should be noted that the data set has a header, and that all *string* data types are automatically transformed in a *factor* data type. This step is necessary to enable us to use classification models later on. Furthermore, from the *Bank Churners* website on Kaggle that is mentioned above, we receive the information from the author that the variables with the name  *Naive_Bayes_Classifier...mon_1* and *Naive_Bayes_Classifier...mon_2* should be removed from the data set. This cleansing step is also done as part of the following code. The cleansed data set is then assigned the name *data_clean*. 
+
+```{r, eval = FALSE}
+data <- read.csv(curl("https://raw.githubusercontent.com/edce1987/edx_edcem_,
+CYO/main/BankChurners.csv"), header = TRUE, stringsAsFactors =  TRUE)
+
+data_clean <- data %>% select(-Naive_Bayes_Classifier_Attrition_Flag_Card_Cate,
+gory_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_,
+mon_1 & -Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_,
+mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2)
+```
+
+```{r, echo = FALSE, message = FALSE}
+data <- read.csv(curl("https://raw.githubusercontent.com/edce1987/edx_edcem_CYO/main/BankChurners.csv"), header = TRUE, stringsAsFactors =  TRUE)
+
+data_clean <- data %>% select(-Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1 & -Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2)
+```
+
+## 2.2 Data Exploration
+In this section, the *Bank Churners* data set is explored in more detail. Personally, I prefer to use the package **DataExplorer** for a detailed analysis. It is a very powerful package that quickly generates a detailed report for a given data set. The report includes some important information such as histograms for the variables, QQ plots, information on missing values, variable correlations and a principal component analysis. For the report at hand, we will perform some of the exploration steps manually.
+
+```{r, message = FALSE}
+plot_intro(data_clean, title = "Data Exploration - Basics")
+```
+
+From this illustration, we see that the data set has **29% discrete columns** (i.e. factor types), and **71% continuous columns** (i.e. numerical or integer). We can also see that there are no missing values, and that the rows are complete. To have a more detailed overview on missing values, we can perform a deeper analysis using the following code:
+
+```{r, message = FALSE}
+plot_missing(data_clean, title = "Data Exploration - Missing Values")
+```
+
+In this plot we can see a more detailed overview of missing values for each variable. However, since there are no missing values for the variables, we don't need to perform further steps to e.g. fill or replace them. 
+
+Another important information is the distribution of the values for each of the variables. By using a **histogram**, we can visually inspect the distributions to see if the variables' values are e.g. normally distributed and what kind of special characteristics they show.
+
+```{r, message = FALSE}
+plot_histogram(data_clean, title = "Data Exploration - Histogram")
+```
+
+From this plot, we can see that most of the variables in our data set are **not** normally distributed. However, an example of an approximately normal distributed variable is the *Customer_Age*. With this knowledge, we should avoid using models or techniques that strictly require the data to be normally distributed. We can gain further insights by looking deeper into a selected set of variables.
+
+```{r, message = FALSE}
+plot_bar(data_clean, title = "Data Exploration - Exemplary Variable Characteristics")
+```
+
+Here we can gain more insights about the characteristics of a selected set of variables with a factor data type. For example, we see that for our target variable *Attrition_Flag* the majority has the characteristic *Existing Customer*, whereas we are more interested in the outcome *Attrited Customer*. This "prevalence" will be discussed later on and it's impact on our results.
+
+```{r, message = FALSE}
+mean(data_clean$Attrition_Flag == "Attrited Customer")
+```
+
+From the variable *Gender*, we can see that most customers are female. From the variable *Income_Category*, we can see that most customers have an income *Less than $40k*. Most customers are married according to the variable *Marital Status*. Most customers have a *Blue* card category.
+
+Of course, we could go into even more detail at this point and e.g. perform correlation analyses for the variables and try to perform a dimensionality reduction using a principal component analysis (PCA). However, I have scoped those steps out and decided to simplify the model design process in this regard. Hence, we will apply the selected machine learning techniques and approaches on the full-size and unrestricted *Bank Churners* data set, and evaluate how the selected models perform in this case. A deeper analysis can be done as part of future work as described in the section *4. Conclusion*.
+
+## 2.3 Data Preparation
+Since in the previous section we observed that there are no missing values in the data set, and that the rows and columns are complete, we do not have to perform further steps for e.g. filling of NAs. However, it makes sense to remove the variable *CLIENTNUM* which is a unique ID for each customer. Since this is a randomly assigned and unique ID, it is plausible to expect that is has no explanatory power. Since no e.g. *joins* are performed later on, we also do not need it for mapping purposes. Also, we want to avoid causing a potential interference for the models. Hence, we remove the *CLIENTNUM* from the data set and receive the set *data_prepared*. From here, we can move further and prepare the data set for the subsequent model design. We split the set *data_prepared* it into a *train set* (80%) (or 8,101 observations) and a *test set* (20%) (or 2,026 observations). The *train set* is used for the purpose of model design and training, whereas the *test set* is used for the model evaluation and parameter optimization.
+
+```{r, message = FALSE}
+data_prepared <- data_clean %>% select(-CLIENTNUM)
 
 set.seed(1, sample.kind="Rounding")
-test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
-edx <- movielens[-test_index,]
-temp <- movielens[test_index,]
-
-validation <- temp %>% 
-  semi_join(edx, by = "movieId") %>%
-  semi_join(edx, by = "userId")
-
-removed <- anti_join(temp, validation)
-edx <- rbind(edx, removed)
-
-rm(dl, ratings, movies, test_index, temp, movielens, removed)
+test_index <- createDataPartition(data_prepared$Attrition_Flag, times = 1, p = 0.2, list = FALSE)
+train_set <- data_prepared[-test_index,]
+test_set <- data_prepared[test_index,]
 ```
-
-
-## 2.2 Data Preparation
-The *edx* data set is used for the purpose of developing and training the recommendation model. Initially, the *edx* set is checked for NAs, i.e. if there are missing values that need to be filled. The *edx* set however does not have NAs, hence no filling of NAs has to be conducted. Next, the data set is enriched with additional information for the model development. The feature **date** is created from the **timestamp** since we want to include a *Time Effect* in the model later on. Additionally, the *edx* set is filtered to include only users that have at least 15 movie ratings. The rationale for the features is provided in the model design section. The latter step reduces the size of the *edx* set to 8,999,671 rows since not every user has more than 15 ratings. Finally, the prepared *edx* data set **edxT** is then split again into a train set (80%) (or 7,199,736 rows) and a test set (20%) (or 1,799,889 rows) to be used in the model development and parameter optimization.
-
-```{r, message = FALSE}
-if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
-if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-
-library(lubridate)
-library(ggplot2)
-
-print(sapply(edx, function(x) sum(is.na(x))))
-
-edxT <- edx %>% mutate(date = round_date(as_datetime(timestamp), unit = "day"))
-dim(edxT)
-
-edxT <- edxT %>% group_by(userId) %>% filter(n() >= 15) %>% ungroup()
-dim(edxT)
-
-set.seed(1, sample.kind = "Rounding")
-
-testIndex <- createDataPartition(y = edxT$rating, times = 1, p = 0.2, list = FALSE)
-trainSet <- edxT[-testIndex, ]
-testSet <- edxT[testIndex, ]
-
-testSet <- testSet %>% 
-  semi_join(trainSet, by = "movieId") %>%
-  semi_join(trainSet, by = "userId")
-```
-
 
 ## 2.3 Model Design
-The recommendation model we want to build is called **Regularized Recommendation Model with Movie, Restricted User, Time & Genre Effect**. The goal of the model is to predict a rating for a certain movie, by a certain user at a certain point in time using the *MovieLens* data. The model is designed such that it captures different biases or effects in the training data set to identify the **biases** or **effects** that influence or shape the resulting rating. For the model, we are going to include a *movie*, *user*, *time* and *genre* bias. Those will be explained later in this section. For each of the selected effects, the concept of **regularization** is used to account for **overfitting**. This issue arises when a model is too specific, i.e. such that it performs well on a well known data set, but rather poorly on an unknown data set. 
-
-To apply the concept of regularization, we introduce a penalty parameter **lambda** to each bias. The penalty parameter is applied to penalize the effect of a bias such that it's influence on the predicted rating is adjusted. The penalty parameter can be considered as a tuning parameter. Hence, we will define a range of lambdas, and repeat the model training and evaluation against the test set to find the optimal lambda. From my trials, I narrowed down the optimal lambda range to be somewhere between 4.5 to 5.5 in 0.1 steps resulting in only 10 iterations to avoid excessive computing time. We could also conduct a finer penalty parameter search, e.g. 1 to 10 in 0,001 steps which would result in 9,000 iterations to optimize our algorithm. However this approach would most probably result in overfitting and massively extend computing time. Hence, we will stick to the selected sequence from 4.5 to 5.5 in 0.1 steps.
-
-To build the recommendation model, we will use the *train* set and evaluate it with the *test* set that we have created in the previous section. To find our optimal lambda, we will use the *Root Mean Squared Error* (RMSE) to evaluate the model performance for each iteration. The RMSE is a widely used performance measure and is constructed such that it calculates the standard deviation of the *residuals*, i.e. the difference between the true rating and the predicted rating. The RMSE is always non-negative due to the residuals getting squared, and it therefore also penalizes large deviations disproportionally. Hence, it is sensitive to outliers. In terms of evaluation, the smaller the RMSE is, the better is the performance of our model.
-
-We construct our recommendation model using different biases or effects in the data set. A *bias* or an *effect* can be considered a feature or explanatory variable that captures a certain pattern that influences a user's movie rating. As a starting point, some of the biases have been selected on the basis of the information that was provided in the edx module "Data Science - Machine Learning", and on top of that, the recommendation model has been extended, refined, and developed further based on additional insights. 
-
-The recommendation model at hand considers different biases or effects in the data, i.e. more specifically the training data. Each bias or effect is constructed such that it captures the difference or "distortion" of an effect in relation to the overall average rating (called *avg*). This difference (= bias) is averaged and penalized with lambda to avoid overfitting. For example, the *Movie Effect* is capturing the averaged and penalized difference of ratings belonging to a certain movie rating in relation to the overall average *avg*. Every additional effect is building on top of that, i.e. for example the subsequent *User Effect* is capturing the averaged and penalized difference of a certain user and his ratings in relation to the overall average *avg* and the *Movie Effect*. This leads to the insight that the order of effects that we use to construct our recommendation model has an impact on the model outcome and performance. The earlier an effect is in the sequence, the more weighty it is by design. I have chosen this order since it produced the best results. Hence, the model has the following effects:
-
-* **Movie Effect:** This parameter captures the effect that a certain movie has on the rating, while adjusting for the overall average rating and regularizing it. Assumption: The movie itself has an effect on the rating.
-
-* **User Effect:** This parameter captures the effect that a certain user has on the rating, while adjusting for the overall average rating and the movie effect and regularizing it. Assumption: The user's behavior and taste has an effect on the rating. We have filtered the *edx* data set in the *Data Preparation* section to users with at least 15 ratings. The assumption is that users who rate more often have more experience / more data points and thus enable more reliable insights into their behavior.
-
-* **Time Effect:** This parameter captures the effect of the date (time) on the rating, i.e. the time when a rating was made, while adjusting for the overall average, the movie effect, the user effect and regularizing it. Assumption: The date when a rating was made has an effect on the rating.
-
-* **Genre Effect:** This parameter captures the effect the genre of the movie has on the rating, while adjusting for the movie, user, and time effect and regularizing it. Assumption: The genre that a movie is belonging to has an effect on the rating.
-
-The code below builds the model and conducts a search for the optimal penalty parameter lambda based on the train and test set. Predictions are calculated for the test set as the sum of *avg*, *Movie Effect*, *User Effect*, *Time Effect* and *Genre Effect* for each row in the test set. Please note that we generate an additional feature called *movie_avg* that represents the specific movie average in contrast to the overall average *avg*. The movie average is used in the prediction process to fill NAs or missing predictions with a finer measure than the overall average. Due to our applied filtering in the *Data Preparation* section (only users with more than 15 ratings) and selected biases (especially time and genre), some NAs or missing values are present in the predictions since there is no information available for all movie, user, genre, time combinations. Hence, we replace those NAs with either 1. the movie average (more precise) or 2. with the overall average in case the movie average is not available too. Additionally, we observe that computed predictions are numerical and can therefore be out of the "allowed" rating range from 0.5 to 5.0 (see *1.2 Data Set* section). To avoid penalties in the RMSE, we trim these values to the nearest allowed rating. 
-
-Finally, each iteration of a lambda is evaluated using the RMSE.
+We want to design a model that predicts a churning customer using our prepared *train set*. The target variable we want to predict is *Attrition Flag*. This is a discrete type variable and can have two different outcomes or levels. One outcome is *Attrited Customer*, the other is *Existing Customer*. From our previous data exploration, we know that the outcome *Attrited Customer* has a prevalence of ~16%, i.e. those customers churned according to the data set. Hence, we need a model type that is suitable for **classification** since we have a discrete target variable here that can only have one of the two mentioned outcomes or levels. To find suitable classification models, we can inspect the list of available models from the *caret* package.
 
 ```{r, message = FALSE}
-lambdas <- seq(4.5, 5.5, 0.1)
+mod <- modelLookup()
+mod <- mod %>% filter(forClass == TRUE)
+head(mod)
+```
+Since we do not know yet which model will perform best on our data set, we will select some popular models and evaluate them in a later step.
 
-RMSE <- function(true, predicted){
-  sqrt(mean((true - predicted)^2, na.rm = TRUE))
-}
+Our selected set of models [^3] contains:
+* **adaboost:** Adaptive Boosting
+* **bayesglm:** Bayes Generalized Linear Model
+* **knn:** K-Nearest Neighbors
+* **naive_bayes:** Naive Bayes
+* **nnet:** Neural Net
+* **Rborist:** Extensible, Parallelizable Implementation of Random Forest
+* **rf:** Random Forest
+* **rpart:** Recursive Partitioning and Regression Trees
+* **svmLinear:** Support Vector Machine Linear
+* **svmPoly:** Support Vector Machine Polynomial
 
-rmses <- sapply(lambdas, function(l){
-  avg <- mean(trainSet$rating)
-  movie_avg <- trainSet %>%
-    group_by(movieId) %>%
-    summarize(movie_avg = mean(rating)) 
-  b_movie <- trainSet %>%
-    group_by(movieId) %>%
-    summarize(b_movie = sum(rating - avg)/(n()+l))
-  b_user <- trainSet %>%
-    left_join(b_movie, by="movieId") %>%
-    group_by(userId) %>%
-    summarize(b_user = sum(rating - avg - b_movie)/(n()+l))
-  b_time <- trainSet %>%
-    left_join(b_movie, by='movieId') %>%
-    left_join(b_user, by='userId') %>% 
-    group_by(date) %>% 
-    summarize(b_time = sum(rating - avg - b_movie - b_user)/(n()+l))
-  b_genre <- trainSet %>%
-    left_join(b_movie, by='movieId') %>%
-    left_join(b_user, by='userId') %>%
-    left_join(b_time, by='date') %>%
-    group_by(genres) %>%
-    summarize(b_genre = sum(rating - avg - b_movie - b_user - b_time)/(n()+l))
-  predicted_ratings <- testSet %>%
-    left_join(movie_avg, by = "movieId") %>%
-    left_join(b_movie, by = "movieId") %>%
-    left_join(b_user, by = "userId") %>%
-    left_join(b_time, by = "date") %>%
-    left_join(b_genre, by = "genres") %>%
-    mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>%
-    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>%
-    mutate(pred = ifelse(is.na(pred), avg, pred)) %>%
-    mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>%
-    .$pred
-  return(RMSE(predicted_ratings, testSet$rating))
+```{r, message = FALSE}
+models <- c("adaboost", "bayesglm", "knn", "naive_bayes", "nnet", "Rborist", "rf", "rpart", "svmLinear", "svmPoly")
+```
+
+[^3]: Explaining each model in detail would go beyond the scope of this report. Hence, the models will only be mentioned listed here.
+
+Each of the selected models will be trained (or fitted) on our prepared *train set*. Each model will be trained using all available variables (or features). To avoid **overfitting**, we will make use of *k-fold cross-validation*. Overfitting arises when a model is too specific, i.e. such that it performs well on a well known data set, but rather poorly on an unknown data set. The concept of *k-fold cross-validation* is a procedure that resamples a given data set **k** times to reduce a potential **selection bias** (or to increase generalization) when deciding which part of your data you use for training and which one for test purposes [^4].
+
+[^4]: Further information: https://towardsdatascience.com/why-and-how-to-cross-validate-a-model-d6424b45261f.
+
+For our model design and training, we will use a 10-fold cross-validation. 
+
+```{r, message = FALSE}
+set.seed(1, sample.kind="Rounding")
+control <- trainControl(method = "cv", number = 10, p = .8)
+```
+
+Following that, the models are fitted and predictions for the target variable *Attrition_Flag* will be made subsequently with each model using the *test set*.
+
+```{r, message = FALSE}
+set.seed(1, sample.kind="Rounding")
+predictions <- sapply(models, function(model) {
+  print(model)
+  fit <- train(Attrition_Flag ~ ., method = model, trControl = control, data = train_set)
+  prediction <- predict(fit, test_set)
+  data.frame(model = prediction)
 })
+predictions <- as.data.frame(predictions)
 ```
 
-The following figure shows the result of the parameter search:
-
-```{r, message = FALSE}
-optResults <- data.frame(lambda = lambdas, rmse = rmses)
-print(optResults %>% ggplot(aes(lambda, rmse)) +
-  ggtitle("RMSE-minimizing lambda") +
-  geom_point() + 
-  geom_smooth() +
-  geom_vline(xintercept = lambdas[which.min(rmses)], color = "red"))
-```
-
-The optimal lambda or penalty parameter is the value that minimizes the RMSE. In this case it is 4.8.
-
-```{r, message = FALSE}
-lambda <- lambdas[which.min(rmses)]
-
-print(lambda)
-```
-
-We can use this insight for the subsequent model evaluation.
+In the next section, we will evaluate the outcome of the training and look at results that were achieved by the selected models.
 
 ## 2.4 Model Evaluation
-From the previous section, we have identified the optimal penalty parameter lambda to be **4.8**. We can now re-run the recommendation model one more time with the optimal parameter to evaluate our model with the training and test data.
+In this section the selected models will be evaluated by computing a **confusion matrix** for each model. The confusion matrix is a table that summarizes the outcome of a classification model. In our case it shows the number of correctly predicted "Attrited Customer" (true positives), correctly predicted "Existing Customer" (true negatives), as well as incorrectly predicted "Attrited Customer" (false positives) and incorrectly predicted "Existing Customer" (false negatives). From this descrption you may understand why the table is named "confusion matrix". From the numbers mentioned further metrics can be derived, e.g. *Accuracy*, *Sensitivity*, *Specificity* and *Prevalence* among others. These metrics, among others, can be used for the evaluation of classification models. 
+
+We will use multiple metrics to evaluate our models to get a clearer and more diversified picture of the models' performances. We will use the **Accuracy** and the **F-measure** to determine the performance of our models. The *Accuracy* is the number of correct predictions in relation to the total predictions made. It is one of the most common performance measures. 
+
+Furthermore, we will use the **F1 score** or **F-measure**. It is a number between 0 and 1 and it is the harmonic mean of **Precision** and **Recall**, i.e. it balances *Precision* and *Recall*. *Precision* (or Pos. Pred. Value) is the share of correct positive predictions (true Positives) in relation to the total positive predictions (true positives + false positives). *Recall* (or Specificity) is the share of correct positive predictions (true positives) in relation to the total positives (true Positives + false Negatives). The *F-measure* is also a very common measure to evaluate classification models [^5]. 
+
+[^5]: Further information: https://towardsdatascience.com/the-5-classification-evaluation-metrics-you-must-know-aa97784ff226
+
+To put the theory into practice, we will compute the *Accuracy* for the selected models first.
 
 ```{r, message = FALSE}
-trainingRmse <- sapply(lambda, function(l){
-  avg <- mean(trainSet$rating)
-  movie_avg <- trainSet %>%
-    group_by(movieId) %>%
-    summarize(movie_avg = mean(rating)) 
-  b_movie <- trainSet %>%
-    group_by(movieId) %>%
-    summarize(b_movie = sum(rating - avg)/(n()+l))
-  b_user <- trainSet %>%
-    left_join(b_movie, by="movieId") %>%
-    group_by(userId) %>%
-    summarize(b_user = sum(rating - avg - b_movie)/(n()+l))
-  b_time <- trainSet %>%
-    left_join(b_movie, by='movieId') %>%
-    left_join(b_user, by='userId') %>% 
-    group_by(date) %>% 
-    summarize(b_time = sum(rating - avg - b_movie - b_user)/(n()+l))
-  b_genre <- trainSet %>%
-    left_join(b_movie, by='movieId') %>%
-    left_join(b_user, by='userId') %>%
-    left_join(b_time, by='date') %>%
-    group_by(genres) %>%
-    summarize(b_genre = sum(rating - avg - b_movie - b_user - b_time)/(n()+l))
-  predicted_ratings <- testSet %>%
-    left_join(movie_avg, by = "movieId") %>%
-    left_join(b_movie, by = "movieId") %>%
-    left_join(b_user, by = "userId") %>%
-    left_join(b_time, by = "date") %>%
-    left_join(b_genre, by = "genres") %>%
-    mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>%
-    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>%
-    mutate(pred = ifelse(is.na(pred), avg, pred)) %>%
-    mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>%
-    .$pred
-  return(RMSE(predicted_ratings, testSet$rating))
+accuracies <- sapply(predictions, function(x) {
+  confusionMatrix(data=x, reference=test_set$Attrition_Flag)$overall["Accuracy"]
 })
-
-print(trainingRmse)
+print(accuracies)
 ```
 
-We can observe that the recommendation model produces a **training RMSE** of **0.8646391** with the optimal penalty parameter based on the train and test set. Please note that this is not the final RMSE using the validation set. The final evaluation of the recommendation model will be conducted in the next section.
+All the models have relatively high accuracies, the bank manager would be happy to see the results. Nonetheless, when looking at the numbers, we see that the *AdaBoost* model has the highest accuracy with **0.9693978**. We can interpret it such that the model predicts ~97% of the *Attrited Customers* (true positives) or *Existing Customers* (true negatives) correctly. 
+
+```{r, message = FALSE}
+print(accuracies[which.max(accuracies)])
+```
+
+In the next step, we compute the *F-measures* for the used models to see whether we get a different result or if the *AdaBoost* model still shows the highest performance even after balancing for *Precision* and *Recall*.
+
+```{r, message = FALSE}
+f_measures <- sapply(predictions, function(x) {
+  F_meas(data=x, reference=test_set$Attrition_Flag)
+})
+print(f_measures)
+```
+
+We can confirm the previous result, the *AdaBoost* model again has the highest performance with an *F-measure* of **0.9012739**. The *F-measure* is not easily interpreted and straightforward as the *Accuracy*, however we can observe that after balancing *Precision* and *Recall* the model has performed less good.
+
+```{r, message = FALSE}
+print(f_measures[which.max(f_measures)])
+```
+
+Up to this point, it appears like the *AdaBoost* model is the best model to choose for the prediction of potentially churning customers. However, we can also check whether an **ensemble** of the selected models will give us better results than the *AdaBoost* model alone. An ensemble is a combination of multiple models. To build an ensemble model, we observe the predictions made by each of our selected models and determine a **majority vote**. Following that, the prediction of the ensemble model is the prediction that the majority of the underlying models made. To compute the majority vote, we can run the following code:
+
+```{r, message = FALSE}
+votes <- rowMeans(predictions == "Attrited Customer")
+```
+
+With the votes computed, we can determine the predictions of the ensemble model in the next step. If the vote is "> 0.5", it means that more than 50% of the underlying models predicted *Attrited Customer*. Hence, the ensemble model's prediction is *Attrited Customer*.
+
+```{r, message = FALSE}
+predEnsemble <- as.factor(ifelse(votes > 0.5, "Attrited Customer", "Existing Customer"))
+```
+
+Now the ensemble model can be evaluated too with the same metrics as before. We compute the *Accuracy* first, and afterwards the *F-measure*.
+
+```{r, message = FALSE}
+accuracyEnsemble <- confusionMatrix(data=predEnsemble, reference=test_set$Attrition_Flag)$overall["Accuracy"]
+print(accuracyEnsemble)
+```
+```{r, message = FALSE}
+fMeasureEnsemble <- F_meas(data=predEnsemble, reference=test_set$Attrition_Flag)
+print(fMeasureEnsemble)
+```
+
+The ensemble model performs relatively good, however with an *Accuracy* of **0.9343534** and an *F-measure* of **0.7637655** it is unfortunately not better than the *AdaBoost* model alone. Hence, we will choose the *AdaBoost* model as our final model.
+
+We can now take a closer look at the *AdaBoost* model to see if we can optimize it further and what else we can find out. To optimize the model, we will use a **tuning grid**. However, we should avoid optimizing it too much since this would most probably result in overfitting the model, and depending on the hardware, would take a very long time. The original optimization (see corresponding R script) was performed with a tuning grid from 0 to 1000 in increments of 50 which took extremely long (~15-20 hours). One could also apply an even finer parameter optimization, e.g. from 1 to 1000 in increments of 1 steps. But this would take even longer and would most probably result in overfitting. Hence, we shall refrain from that. From my personal trials during the model development, I found that the optimal parameters for the *AdaBoost* model at hand are **nIter = 450** with **method = "Adaboost.M1"**. Knowing the optimal parameters, we can massively accelerate the fitting process.
+
+```{r, message = FALSE}
+fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = 450, method = "Adaboost.M1"), data = train_set)
+```
+
+Once the optimization is completed, we can inspect the final model parameters. From this, we can see that the *AdaBoost* model uses 450 trees to decide whether a customer is likely to churn or not.
+
+```{r, message = FALSE}
+fitAdaboost
+```
+
+Now, wen can quickly check how the optimized *AdaBoost* model performs in terms of *Accuracy* and *F-measure*. Therefore we compute the same metrics as before.
+
+```{r, message = FALSE}
+predAdaboost <- predict(fitAdaboost, test_set)
+print(confusionMatrix(data=predAdaboost, reference=test_set$Attrition_Flag)$overall["Accuracy"])
+```
+
+```{r, message = FALSE}
+print(F_meas(data=predAdaboost, reference=test_set$Attrition_Flag))
+```
+
+Indeed, the optimized *AdaBoost* model has improved slightly. The optimized *AdaBoost* model has an *Accuracy* of **0.9698914** vs. 0.9693978 (w/o optimization). The *F-measure* after optimization is **0.9020867** vs. 0.9012739 (w/o optimization). It has also improved slightly. 
 
 # 3. Results
-This section will perform the final evaluation of the recommendation model. Subsequently, the model results will be presented and discussed. To evaluate the model results, we will use the RMSE as before.
+From the previous section, we have seen that the *AdaBoost* model performed best on the *Bank Churners* data set with an *Accuracy* of 0.9698914 and an *F-measure* of 0.9020867. In this section will gain and discuss further insights by looking into more detail of the model's outcome. 
 
-The following code performs the final evaluation of the recommendation model using the final hold-out validation set.
-
-```{r, message = FALSE}
-finalRmse <- sapply(lambda, function(l){
-  avg <- mean(trainSet$rating)
-  movie_avg <- trainSet %>%
-    group_by(movieId) %>%
-    summarize(movie_avg = mean(rating))
-  b_movie <- trainSet %>% 
-    group_by(movieId) %>%
-    summarize(b_movie = sum(rating - avg)/(n()+l))
-  b_user <- trainSet %>% 
-    left_join(b_movie, by="movieId") %>%
-    group_by(userId) %>% 
-    summarize(b_user = sum(rating - avg - b_movie)/(n()+l))
-  b_time <- trainSet %>% 
-    left_join(b_movie, by='movieId') %>%
-    left_join(b_user, by='userId') %>% 
-    group_by(date) %>% 
-    summarize(b_time = sum(rating - avg - b_movie - b_user)/(n()+l))
-  b_genre <- trainSet %>% 
-    left_join(b_movie, by='movieId') %>%
-    left_join(b_user, by='userId') %>%
-    left_join(b_time, by='date') %>%
-    group_by(genres) %>%
-    summarize(b_genre = sum(rating - avg - b_movie - b_user - b_time)/(n()+l))
-  predicted_ratings <- validation %>% 
-    mutate(date = as_datetime(timestamp), date = round_date(date, unit = "day")) %>%
-    left_join(movie_avg, by = "movieId") %>%
-    left_join(b_movie, by = "movieId") %>%
-    left_join(b_user, by = "userId") %>%
-    left_join(b_time, by = "date") %>%
-    left_join(b_genre, by = "genres") %>%
-    mutate(pred = avg + b_movie + b_user + b_time + b_genre) %>%
-    mutate(pred = ifelse(is.na(pred), movie_avg, pred)) %>%
-    mutate(pred = ifelse(is.na(pred), avg, pred)) %>%
-    mutate(pred = ifelse(pred < 0, 0.5, ifelse(pred > 5, 5, pred))) %>%
-    .$pred 
-  return(RMSE(predicted_ratings, validation$rating))
-})
-```
+An important insight can be gained by looking at the **variable importance**, and with that, to see which variables (or features) in the data set have the highest importance or explanatory power for the correct prediction of the *Attrition Flag*. This information can be very valuable and useful, especially for the use case at hand. With this knowledge, the bank manager can consider those variables as **early warning indicators**. Those can then be monitored to e.g. identify potentially churning customers at an early stage and to initiate early countermeasures to prevent customers from churning.
 
 ```{r, message = FALSE}
-print(finalRmse)
+varImp(fitAdaboost)
 ```
-We receive a **final RMSE** of **0.8646854** on the validation set. We can see that the final RMSE has slightly worsened in comparison to the RMSE when using the test data set in the previous section. This was expected since the search for the optimal parameter lambda was conducted on the test set and therefore performed slightly worse on the validation set. This might be a minor overfitting issue. However, the difference is marginal.
 
-# 4. Conclusion 
-The report at hand described the key steps and results of my *Capstone Project*. Initially, the *MovieLens Project* and the used data set have been explained and background information was provided. Following that, the goal and the key steps of the *Capstone Project* have been described. Afterwards, the modeling process as well as the approach for building and evaluating the recommendation model have been explained and a reasoning for the chosen design has been given. Finally, the results have been evaluated, presented and discussed. The recommendation model has a final RMSE of **0.8646854** on the **validation set**.
+From this, we see the most important variables in the data set to predict potentially churning customers. I.e. the *number of transactions in the last 12 months*, the *change in the number of transactions in the last 12 months*, or the *total revolving balance on the credit card*. These variables, among others, should be of special importance and serve as early warning indicators to the bank manager.
 
-The limitations of this project are that we have used a restricted *MovieLens* data set (10m) instead of the full-scope data set. The full-scope set might have revealed further effects or insights into the data. Another limitation - even though we used a reduced data set - is the limitation that is put by the limited computing power of a regular notebook or desktop pc. In my case, e.g. it did not allow for the application of more advanced and computationally intensive modeling techniques in a reasonable time, e.g. using ensemble methods with Random Forests, AdaBoost or GamLoess. Future work can focus on the full-scope *MovieLens* data set, and even join additional publicly available data to the existing data to gather further insights. In addition, the usage of cloud services, e.g. *Microsoft Azure*, *Google Cloud Platform* or *Amazon AWS* could enable the application of more advanced and computationally intensive models in a reasonable time frame. 
+# 4. Conclusion
+The report at hand described the key steps and results of my *Choose Your Own Capstone Project*. Initially, the *Bank Churners* use case and the used data set have been explained and background information was provided. Following that, the goal and the key steps of the the project have been described. Afterwards, the modeling design process as well as the evaluation of the *Bank Churners* prediction model have been explained and a reasoning for the chosen design has been given. Finally, the results as well as further insights have been presented and discussed.
 
+From our evaluation results, we have seen that the *Adaboost* model has the highest *Accuracy* for the *Bank Churners* use case. Even after using the *F-measure*, which is a more balanced metric, we saw that the *AdaBoost* model was still superior to the other selected models for the data set at hand. For the **Bank Churners** use case, our insights can be very useful for the bank manager. He could use the model to predict which customer is likely to churn, and hence proactively contact the customer to offer an extended service or special credit card conditions.
+
+A limitation is that, since the underlying data set only has a relatively small prevalence of ~16% of *Attrited Customers*, the final model prediction might not always be as reliable and robust in the prediction of churning customers as our evaluation metrics suggest. Hence, one way to improve or to stabilize the model would be to gather more data at the bank itself, or to buy additional data from external data providers to enrich the existing data set. Another limitation is set by the limited computing power of a regular notebook or desktop pc. In my case, e.g. it did not allow for the application of more advanced and computationally intensive tuning grids or optimization techniques in a reasonable time. A potential future work could make use of cloud services to get the necessary computing power, e.g. *Microsoft Azure*, *Google Cloud Platform* or *Amazon AWS*.
