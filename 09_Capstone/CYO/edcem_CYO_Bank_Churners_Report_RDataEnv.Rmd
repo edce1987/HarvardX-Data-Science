@@ -9,6 +9,10 @@ output:
 mainfont: Calibri Light 
 ---
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
+load(file = "C:/Users/edin.ceman/Documents/GitHub/HarvardX-Data-Science/09_Capstone/CYO/EnvironmentClean.RData")
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org", dependencies = TRUE)
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org", dependencies = TRUE)
 if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org", dependencies = TRUE)
@@ -208,7 +212,7 @@ control <- trainControl(method = "cv", number = 10, p = .8)
 
 Following that, the models are fitted based on the *train set* and predictions for the target variable *Attrition_Flag* are made with each of the models for the *test set*.
 
-```{r, message=FALSE, warning=FALSE}
+```{r, eval=FALSE, warning=FALSE}
 set.seed(1, sample.kind = "Rounding")
 predictions <- sapply(models, function(model) {
   print(model)
@@ -307,11 +311,6 @@ fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = contro
                      tuneGrid = data.frame(nIter = 450, method = "Adaboost.M1"), 
                      data = train_set)
 ```
-
-```{r, message=FALSE, warning=FALSE}
-fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = 450, method = "Adaboost.M1"), data = train_set)
-```
-
 
 Once the optimization is completed, we can inspect the final model parameters. From this, we can see that the *AdaBoost* model uses **450 trees** with the method **AdaBoost.M1** to decide whether a customer is likely to churn or not.
 
