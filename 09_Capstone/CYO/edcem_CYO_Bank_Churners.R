@@ -1,5 +1,4 @@
-## Introduction
-
+## 1. Introduction
 # The following context / background information is taken from the below source 
 # link. I have summarized it such that it conveys the key information.
 
@@ -17,17 +16,16 @@
 # https://www.kaggle.com/sakshigoyal7/credit-card-customers/
 
 # Install & load required packages.
-if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
-if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
-if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
-if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
-if(!require(DataExplorer)) install.packages("DataExplorer", repos = "http://cran.us.r-project.org")
-if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
-if(!require(curl)) install.packages("curl", repos = "http://cran.us.r-project.org")
-if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+if(!require(DataExplorer)) install.packages("DataExplorer", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+if(!require(curl)) install.packages("curl", repos = "http://cran.us.r-project.org", dependencies = TRUE)
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org", dependencies = TRUE)
 
-
-## Data Initiation (Main solution)
+## 2.1 Data Initiation (Main solution)
 # There are different ways to access the necessary data set.
 # I figured out that the most convenient way is by using the package "curl" and
 # to download the *.csv file directly from my public GitHub account. Should you 
@@ -43,7 +41,7 @@ data_clean <- data %>% select(-Naive_Bayes_Classifier_Attrition_Flag_Card_Catego
 # Please note that all strings are directly converted to factors.
 str(data_clean)
 
-#### You can skip this part and continue with "Data Exploration" directly.
+#### You can skip this part and continue with "Data Exploration" directly. ####
 
 ## Data Initiation (Alternative solution)
 
@@ -74,15 +72,14 @@ str(data_clean)
 #data <- fread(cmd = 'unzip -cq archive.zip', header = TRUE, stringsAsFactors = TRUE)
 
 
-## Data Exploration
-
+## 2.2 Data Exploration
 # To give you a better insight into the data, I have listed the included
 # variables and a description of the name, type and meaning. All the information
 # can be found in the above source link.
 
 # The data set has the following variables:
 # CLIENTNUM (int) -> Unique customer ID.
-# Attrition_Flag (Factor w/ 2 levels "Attrited Customer",) -> Flag if customer churned.
+# Attrition_Flag (Factor w/ 2 levels "Attrited Customer", "Existing Customer") -> Flag if customer churned.
 # Customer_Age (int) -> Age of the customer.
 # Gender (Factor w/ 2 levels "F","M") -> Sex female or male.
 # Dependent_count (int) -> Number of dependents.
@@ -106,7 +103,7 @@ str(data_clean)
 # To quickly explore the dataset in more detail, we could simply use the package 
 # "DataExplorer" which is a very powerful package to quickly generate a report 
 # that gives you a detailed insight into your dataset.
-DataExplorer::create_report(data_clean)
+# DataExplorer::create_report(data_clean)
 
 # From the generated report (html) we receive a broad range of information. 
 # Among others, we get basic statistics of our data set, i.e. number of rows, 
@@ -121,7 +118,7 @@ DataExplorer::create_report(data_clean)
 # that strictly assume normality of the data. We also see a correlation analysis 
 # of the variables and principal component analysis.
 
-# However, since it would be strange to have a report generated in a report, 
+# However, since it would be "strange" to have a report generated in a report, 
 # let us perform some of the data exploration steps manually.
 
 # Plot basic data insights.
@@ -136,14 +133,14 @@ plot_histogram(data_clean, title = "Data Exploration - Histogram")
 # Plot bar diagram
 plot_bar(data_clean, title = "Data Exploration - Exemplary Variable Characteristics")
 
-## Data Preparation
+## 2.3 Data Preparation
 #Inspect dataset
 View(data_clean)
 
 # It makes sense to remove the variable *CLIENTNUM* which is a unique ID for each customer. Since this is a randomly assigned and unique ID, it is plausible to expect that is has no explanatory power. Since no e.g. *joins* are performed later on, we also do not need it for mapping purposes. Also, we want to avoid causing a potential interference for the models. Hence, we remove the *CLIENTNUM* from the data set.
 data_prepared <- data_clean %>% select(-CLIENTNUM)
 
-# Remove obsolete sets
+# Remove obsolete sets.
 rm(data, data_clean)
 
 # Create train set (80%) and test set (20%). 
@@ -153,8 +150,7 @@ train_set <- data_prepared[-test_index,]
 test_set <- data_prepared[test_index,]
 
 
-## Model Design
-
+## 2.4 Model Design
 # We want to predict potentially churning customers which is indicated by the 
 # variable "Attrition_Flag". It is a discrete or factor variable.
 # Hence, we need a model that it appropriate for classification purposes.
@@ -164,8 +160,8 @@ mod <- modelLookup()
 mod <- mod %>% filter(forClass == TRUE)
 View(mod)
 
-# We select a set of suitable models and store them into the "models" variable.
-models <- c("adaboost", "bayesglm", "knn", "naive_bayes", "nnet", "Rborist", "rf", "rpart", "svmLinear", "svmPoly")
+# We select a set of 10 suitable models and store them into the "models" variable.
+models <- c("adaboost", "bayesglm", "knn", "naive_bayes", "Rborist", "rf", "rpart", "svmLinear", "svmPoly", "svmRadial")
 
 # We use 10-fold cross validation to account for overfitting and selection bias.
 set.seed(1, sample.kind="Rounding")
@@ -192,7 +188,7 @@ predictions <- as.data.frame(predictions)
 View(predictions)
 
 
-## Model Evaluation
+## 2.5 Model Evaluation
 # We evaluate the predictions and compute a confusion matrix for each model.
 # The confusion matrix is a table that describes the performance of a 
 # classification model with certain figures. From it you can derive several 
@@ -226,7 +222,7 @@ print(accuracies)
 
 # The models have very high accuracies, the bank manager would be happy to 
 # see the results. When looking at the numbers, we see that the "AdaBoost" 
-# model has the highest accuracy with 0.9693978.
+# model has the highest accuracy.
 print(accuracies[which.max(accuracies)])
 
 # Let us now look at the F_measures for the used models.
@@ -235,7 +231,7 @@ f_measures <- sapply(predictions, function(x) {
 })
 print(f_measures)
 
-# The "AdaBoost" model also has the highest F-measure with 0.9012739.
+# The "AdaBoost" model also has the highest F-measure.
 print(f_measures[which.max(f_measures)])
 
 # As of now, it looks like the AdaBoost model is the best model to choose.
@@ -258,7 +254,6 @@ View(votes)
 predEnsemble <- as.factor(ifelse(votes > 0.5, "Attrited Customer", "Existing Customer"))
 
 # Evaluation of the ensemble model using accuracy and F-measure.
-# The accuracy is 0.9343534, the F-measure is 0.7637655.
 accuracyEnsemble <- confusionMatrix(data=predEnsemble, reference=test_set$Attrition_Flag)$overall["Accuracy"]
 print(accuracyEnsemble)
 
@@ -270,15 +265,14 @@ print(fMeasureEnsemble)
 # the "AdaBoost" model alone. Hence, we will select the "AdaBoost" model as our 
 # final model. 
 
-
-## Model - Optimization
+# Optimization
 # Let us take a closer look into the "AdaBoost" model to see what else we can 
 # find out. We will apply a slightly larger tuning grid to see if we can improve 
 # our model further. However we should avoid optimizing it too much since this 
 # would result in overfitting the model, and depending on the hardware, would 
 # take a very very long time.
 
-# Attention: This optimizazion step with a tuning grid from 0 to 1000 in 50' steps
+# Attention: This optimization step with a tuning grid from 0 to 1000 in 50' steps
 # will take very long (~15-20 hours) depending on your machine. Having a more 
 # granular parameter search e.g. from 1 to 1000 in 1 steps would take extremely 
 # long and would most probably result in overfitting. Hence, we will not do that.
@@ -296,20 +290,21 @@ fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = contro
 # for the optimized model. It means, the model uses 450 trees to decide whether
 # a customer is going to churn or not.
 fitAdaboost
-ggplot(fitAdaboost)
 fitAdaboost$bestTune
-fitAdaboost$finalModel
 
-# Now We quickly check how the optimized model performs in terms of accuracy 
+# Now, we quickly check how the optimized model performs in terms of accuracy 
 # and F-measure. Therefore we compute the same metrics as before.
 predAdaboost <- predict(fitAdaboost, test_set)
-confusionMatrix(data=predAdaboost, reference=test_set$Attrition_Flag)$overall["Accuracy"]
-F_meas(data=predAdaboost, reference=test_set$Attrition_Flag)
 
-# Indeed, the optimized AdaBoost model has improved further. The optimized model
-# has an accuracy 0.9713722 vs. 0.9708786 (w/o optimization). The F-measure 
-# after optimization is 0.9061489 vs 0.904376 (w/o optimization). 
+accuracyAdaboost <- confusionMatrix(data=predAdaboost, reference=test_set$Attrition_Flag)$overall["Accuracy"]
+print(accuracyAdaboost)
 
+fMeasureAdaboost <- F_meas(data=predAdaboost, reference=test_set$Attrition_Flag)
+print(fMeasureAdaboost)
+
+# Indeed, the optimized AdaBoost model has improved further. 
+
+## 3. Results
 # Next, we check the variable importance to gather further insights and to see 
 # which variables in the data set have the highest explanatory power. This 
 # information can be very valuable and useful to identify potentially churning 
@@ -324,7 +319,7 @@ varImp(fitAdaboost)
 # they are indicators of a potentially churning customer.
 
 
-## Summary and Limitations
+## 4. Summary and Limitations
 # From our evaluation results, we see that the "Adaboost" model has the highest 
 # accuracy and the highest F-measure. It means, the "AdaBoost" model correctly 
 # predicted approximately 97% of the "Attrited Customers". Even after using
