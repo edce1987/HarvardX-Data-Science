@@ -2,13 +2,13 @@
 title: "Report on the Prediction of Bank Churners"
 subtitle: "Data Science: Capstone - Choose Your Own Project"
 author: "by Edin Ceman"
-date: "17th February 2021"
+date: "18th February 2021"
 output: 
   pdf_document:
     latex_engine: xelatex
 mainfont: Calibri Light 
 ---
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
+```{r, message=FALSE, echo=FALSE}
 load(file = "C:/Users/edin.ceman/Documents/GitHub/HarvardX-Data-Science/09_Capstone/CYO/EnvironmentClean.RData")
 ```
 
@@ -212,7 +212,7 @@ control <- trainControl(method = "cv", number = 10, p = .8)
 
 Following that, the models are fitted based on the *train set* and predictions for the target variable *Attrition_Flag* are made with each of the models for the *test set*.
 
-```{r, eval=FALSE}
+```{r, eval = FALSE}
 set.seed(1, sample.kind = "Rounding")
 predictions <- sapply(models, function(model) {
   print(model)
@@ -310,10 +310,6 @@ We can now take a closer look at the *AdaBoost* model to see if we can optimize 
 fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, 
                      tuneGrid = data.frame(nIter = 450, method = "Adaboost.M1"), 
                      data = train_set)
-```
-
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
-fitAdaboost <- train(Attrition_Flag ~ ., method = "adaboost", trControl = control, tuneGrid = data.frame(nIter = 450, method = "Adaboost.M1"), data = train_set)
 ```
 
 Once the optimization is completed, we can inspect the final model parameters. From this, we can see that the *AdaBoost* model uses **450 trees** with the method **AdaBoost.M1** to decide whether a customer is likely to churn or not.
